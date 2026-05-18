@@ -1,0 +1,65 @@
+.cta-section {
+  padding: var(--space-32) var(--space-6);
+  background: var(--bg);
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.cta-section::before {
+  display: none;
+}
+
+.cta-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+  padding: var(--space-20) var(--space-12);
+  
+  /* The Matte + Green Gradient Effect */
+  background: linear-gradient(135deg, rgba(253, 251, 248, 0.9) 0%, rgba(245, 240, 235, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  border-radius: 32px;
+  
+  /* Outer glow, thin border, and inner gradient glow */
+  border: 1px solid rgba(26, 154, 138, 0.4);
+  box-shadow: 
+    0 20px 40px -10px rgba(26, 154, 138, 0.2), 
+    inset 0 0 80px 10px rgba(46, 196, 182, 0.15),
+    inset 0 0 20px 0 rgba(26, 154, 138, 0.2),
+    inset 0 4px 10px rgba(255, 255, 255, 0.8);
+    
+  overflow: hidden;
+}
+
+/* Add a subtle green atmospheric glow from the corners inside the card */
+.cta-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at top left, rgba(46, 196, 182, 0.3) 0%, transparent 40%),
+              radial-gradient(circle at bottom right, rgba(26, 154, 138, 0.3) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.cta-title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.cta-sub {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+  line-height: var(--line-height-relaxed);
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}

@@ -1,0 +1,142 @@
+import { Link } from 'react-router-dom';
+import { ThumbsUp, DollarSign, HelpCircle, MessageCircle, Clock, Bookmark, Users } from 'lucide-react';
+import './IdeaCard.css';
+
+const ScoreIndicator = ({ score }) => {
+  const radius = 20;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+  
+  const getScoreColor = (score) => {
+    if (score >= 75) return 'var(--success)';
+    if (score >= 50) return 'var(--warning)';
+    return 'var(--error)';
+  };
+
+  return (
+    <div className="circular-score" title={`Score: ${score}`}>
+      <svg width="48" height="48" viewBox="0 0 48 48">
+        <circle 
+          cx="24" cy="24" r={radius} 
+          className="score-bg-circle"
+          strokeWidth="4" fill="none"
+        />
+        <circle 
+          cx="24" cy="24" r={radius} 
+          className="score-progress-circle"
+          strokeWidth="4" fill="none"
+          stroke={getScoreColor(score)}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          transform="rotate(-90 24 24)"
+          style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+        />
+      </svg>
+      <span className="circular-score-value">{score}</span>
+    </div>
+  );
+};
+
+export default function IdeaCard({ idea, onVote, forceScore }) {
+  const getScoreLabel = (score) => {
+    if (score >= 75) return 'Strong Concept';
+    if (score >= 35) return 'Moderate Potential';
+    return 'Weak Concept';
+  };
+
+  const timeAgo = (dateStr) => {
+    if (!dateStr) return 'Just now';
+    let timeMs = dateStr;
+    if (dateStr && typeof dateStr.toDate === 'function') {
+      timeMs = dateStr.toDate().getTime();
+    } else if (typeof dateStr === 'string' || typeof dateStr === 'number') {
+      timeMs = new Date(dateStr).getTime();
+    }
+    const diff = Date.now() - timeMs;
+    const days = Math.floor(diff / 86400000);
+    if (days > 0) return `${days}d ago`;
+    const hours = Math.floor(diff / 3600000);
+    if (hours > 0) return `${hours}h ago`;
+    return 'Just now';
+  };
+
+  const totalVotes = idea.votes ? (idea.votes.useful + idea.votes.wouldPay + idea.votes.needsWork) : 0;
+  const score = forceScore ?? idea.score ?? idea.validationScore ?? ((idea.votes?.useful || 0) * 2 + (idea.votes?.wouldPay || 0) * 3 - (idea.votes?.needsWork || 0));
+  const commentCount = idea.commentCount ?? idea.commentsCount ?? 0;
+  
+  return (
+    <div className="idea-card animate-fade-in-up" id={`idea-card-${idea.id}`}>
+      <div className="idea-card-header">
+        <div className="idea-card-header-main">
+          <Link to={`/idea/${idea.id}`} className="idea-card-title">
+            {idea.title}
+          </Link>
+          <div className="idea-card-meta-top">
+             <span className="idea-meta-author">{idea.author?.name || 'Anonymous'}</span>
+             <span className="idea-meta-divider">·</span>
+             <span className="idea-meta-time">
+                <Clock size={12} />
+                {timeAgo(idea.createdAt)}
+             </span>
+          </div>
+        </div>
+        <div className="idea-score-container">
+          <ScoreIndicator score={score} />
+          <span className="idea-score-label">{getScoreLabel(score)}</span>
+        </div>
+      </div>
+
+      <p className="idea-card-desc">{idea.problem}</p>
+
+      <div className="idea-card-tags">
+        {idea.tags?.map((tag) => (
+          <span key={tag} className="idea-tag">{tag}</span>
+        ))}
+      </div>
+
+      <div className="idea-card-footer">
+        <div className="idea-card-actions-main">
+          <button
+            className="idea-action-btn vote-useful"
+            onClick={() => onVote?.(idea.id, 'useful')}
+            title="Useful"
+          >
+            <ThumbsUp size={16} />
+            <span>{idea.votes?.useful || 0}</span>
+          </button>
+          <button
+            className="idea-action-btn vote-pay"
+            onClick={() => onVote?.(idea.id, 'wouldPay')}
+            title="Would Pay"
+          >
+            <DollarSign size={16} />
+            <span>{idea.votes?.wouldPay || 0}</span>
+          </button>
+          <button
+            className="idea-action-btn vote-improve"
+            onClick={() => onVote?.(idea.id, 'needsWork')}
+            title="Needs Improvement"
+          >
+            <HelpCircle size={16} />
+            <span>{idea.votes?.needsWork || 0}</span>
+          </button>
+        </div>
+
+        <div className="idea-card-actions-secondary">
+          <div className="social-proof-badge" title={`${totalVotes} users have validated this idea`}>
+             <Users size={14} />
+             <span>{totalVotes} validating</span>
+          </div>
+          <Link to={`/idea/${idea.id}`} className="idea-action-btn neutral">
+            <MessageCircle size={16} />
+            <span>{commentCount}</span>
+          </Link>
+          <button className="idea-action-btn neutral icon-only" title="Save Idea">
+            <Bookmark size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
