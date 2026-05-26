@@ -147,48 +147,7 @@ export const comments = [
   },
 ];
 
-export const notifications = [
-  {
-    id: 'n1',
-    type: 'vote',
-    message: 'Sarah Chen voted "Would Pay" on your idea',
-    ideaTitle: 'CodeReview.ai',
-    time: '2 min ago',
-    read: false,
-  },
-  {
-    id: 'n2',
-    type: 'comment',
-    message: 'James Wright commented on your idea',
-    ideaTitle: 'CodeReview.ai',
-    time: '15 min ago',
-    read: false,
-  },
-  {
-    id: 'n3',
-    type: 'trending',
-    message: 'Your idea is trending! 🔥',
-    ideaTitle: 'CodeReview.ai',
-    time: '1 hour ago',
-    read: false,
-  },
-  {
-    id: 'n4',
-    type: 'vote',
-    message: 'Raj Patel voted "Useful" on your idea',
-    ideaTitle: 'CodeReview.ai',
-    time: '3 hours ago',
-    read: true,
-  },
-  {
-    id: 'n5',
-    type: 'comment',
-    message: 'Emily Davis left feedback on your idea',
-    ideaTitle: 'EcoTrack',
-    time: '1 day ago',
-    read: true,
-  },
-];
+
 
 export const trendingIdeas = [
   { id: '4', title: 'CodeReview.ai', score: 91, votes: 117 },

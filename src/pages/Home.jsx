@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { TrendingUp, Tag, Search, Filter, Hash } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment, getDocs, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import Navbar from '../components/Navbar';
 import IdeaCard from '../components/IdeaCard';
 import { useAuth } from '../context/AuthContext';
+import { useSearch } from '../context/SearchContext';
+import { runKeywordMigration } from '../lib/migrateKeywords';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Home.css';
 
@@ -13,22 +15,52 @@ export default function Home({ showToast }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
+  const { searchTerm, isSearching } = useSearch();
   const [ideaList, setIdeaList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const q = query(collection(db, 'ideas'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ideasData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setIdeaList(ideasData);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+    setLoading(true);
+
+    if (searchTerm) {
+      const fetchSearchResults = async () => {
+        try {
+          const q = query(
+            collection(db, 'ideas'),
+            where('keywords', 'array-contains', searchTerm.toLowerCase())
+          );
+          const snapshot = await getDocs(q);
+          const ideasData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          // Sort client-side to avoid needing a composite index
+          ideasData.sort((a, b) => {
+            const timeA = a.createdAt?.toMillis?.() || Date.parse(a.createdAt) || 0;
+            const timeB = b.createdAt?.toMillis?.() || Date.parse(b.createdAt) || 0;
+            return timeB - timeA;
+          });
+          setIdeaList(ideasData);
+        } catch (error) {
+          console.error("Error fetching search results:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchSearchResults();
+    } else {
+      const q = query(collection(db, 'ideas'), orderBy('createdAt', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const ideasData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setIdeaList(ideasData);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    }
+  }, [searchTerm]);
 
   const calculateInfo = (idea) => {
     const u = idea.votes?.useful || 0;
@@ -46,17 +78,7 @@ export default function Home({ showToast }) {
     });
   }, [ideaList]);
 
-  // Derived Real Data for Sidebar
-  // Derived list based on search
-  const filteredIdeas = useMemo(() => {
-    let result = processedIdeas;
-    if (searchQuery) {
-       result = result.filter(i => i.title.toLowerCase().includes(searchQuery.toLowerCase()) || i.problem.toLowerCase().includes(searchQuery.toLowerCase()) || i.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
-    }
-    // Default sort could be newest (since real data is pulled from Firestore ordered by createdAt desc)
-    // Or we simply return the result without sorting if we rely on Firestore's native order.
-    return result;
-  }, [processedIdeas, searchQuery]);
+  const filteredIdeas = processedIdeas; // Filtering is now done via Firestore
 
   const handleVote = async (id, type) => {
     if (!currentUser) {
@@ -95,26 +117,24 @@ export default function Home({ showToast }) {
       <div className="home-layout">
         <main className="home-feed" style={{ maxWidth: '800px', margin: '0 auto', gridColumn: '1 / -1' }}>
           <div className="home-feed-header animate-fade-in-up">
-            <h1 className="home-feed-title">Idea Feed</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h1 className="home-feed-title">Idea Feed</h1>
+              {currentUser && (
+                <button 
+                  onClick={runKeywordMigration}
+                  style={{ fontSize: '12px', padding: '4px 8px', background: '#eee', borderRadius: '4px', cursor: 'pointer', border: 'none' }}
+                >
+                  Run Search Migration
+                </button>
+              )}
+            </div>
             <p className="home-feed-sub">Discover and validate startup ideas from the community</p>
           </div>
 
-          <div className="home-feed-controls animate-fade-in-up delay-1">
-             <div className="search-bar">
-                <Search size={18} className="search-icon" />
-                <input 
-                   type="text" 
-                   placeholder="Search ideas, keywords..." 
-                   value={searchQuery}
-                   onChange={e => setSearchQuery(e.target.value)}
-                />
-             </div>
-          </div>
-
           <div className="home-feed-list">
-            {loading ? (
+            {(loading || isSearching) ? (
                Array.from({length: 3}).map((_, i) => (
-                 <div key={i} className="idea-card skeleton-card" style={{padding: '1.5rem', background: '#fff', borderRadius: '12px'}}>
+                 <div key={i} className="idea-card skeleton-card" style={{padding: '1.5rem', background: 'var(--glass-card)', border: '1px solid var(--glass-border)', borderRadius: '12px', backdropFilter: 'var(--glass-blur)'}}>
                    <div className="skeleton skeleton-title"></div>
                    <div className="skeleton skeleton-text"></div>
                    <div className="skeleton skeleton-text" style={{width: '80%'}}></div>
@@ -131,13 +151,13 @@ export default function Home({ showToast }) {
                  animate={{ opacity: 1, y: 0 }}
                  transition={{ delay: i * 0.1, duration: 0.4 }}
               >
-                <IdeaCard idea={idea} onVote={handleVote} forceScore={idea.calculatedScore} />
+                <IdeaCard idea={idea} onVote={handleVote} forceScore={idea.calculatedScore} highlightTerm={searchTerm} />
               </motion.div>
             )) : (
                <div className="empty-state">
                   <div className="empty-icon"><Search size={32} /></div>
-                  <h3>No ideas found 🚀</h3>
-                  <p>Try adjusting your search or filters to find what you're looking for.</p>
+                  <h3>No matching ideas found {searchTerm ? `for "${searchTerm}"` : ''} 🚀</h3>
+                  <p>Try adjusting your search to find what you're looking for.</p>
                </div>
             )}
           </div>

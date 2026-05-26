@@ -2,6 +2,27 @@ import { Link } from 'react-router-dom';
 import { ThumbsUp, DollarSign, HelpCircle, MessageCircle, Clock, Bookmark, Users } from 'lucide-react';
 import './IdeaCard.css';
 
+const HighlightText = ({ text, highlight }) => {
+  if (!highlight || !text) return text;
+  
+  const regex = new RegExp(`(${highlight})`, 'gi');
+  const parts = String(text).split(regex);
+  
+  return (
+    <>
+      {parts.map((part, i) => 
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <mark key={i} style={{ backgroundColor: 'var(--primary-50)', color: 'inherit', padding: '0 2px', borderRadius: '2px', fontWeight: '500' }}>
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+};
+
 const ScoreIndicator = ({ score }) => {
   const radius = 20;
   const circumference = 2 * Math.PI * radius;
@@ -38,7 +59,7 @@ const ScoreIndicator = ({ score }) => {
   );
 };
 
-export default function IdeaCard({ idea, onVote, forceScore }) {
+export default function IdeaCard({ idea, onVote, forceScore, highlightTerm }) {
   const getScoreLabel = (score) => {
     if (score >= 75) return 'Strong Concept';
     if (score >= 35) return 'Moderate Potential';
@@ -70,7 +91,7 @@ export default function IdeaCard({ idea, onVote, forceScore }) {
       <div className="idea-card-header">
         <div className="idea-card-header-main">
           <Link to={`/idea/${idea.id}`} className="idea-card-title">
-            {idea.title}
+            <HighlightText text={idea.title} highlight={highlightTerm} />
           </Link>
           <div className="idea-card-meta-top">
              <span className="idea-meta-author">{idea.author?.name || 'Anonymous'}</span>
@@ -87,7 +108,9 @@ export default function IdeaCard({ idea, onVote, forceScore }) {
         </div>
       </div>
 
-      <p className="idea-card-desc">{idea.problem}</p>
+      <p className="idea-card-desc">
+        <HighlightText text={idea.problem} highlight={highlightTerm} />
+      </p>
 
       <div className="idea-card-tags">
         {idea.tags?.map((tag) => (

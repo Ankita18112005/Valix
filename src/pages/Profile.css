@@ -5,7 +5,8 @@
 }
 
 .profile-card {
-  background: var(--surface); border: 1px solid var(--border-light);
+  background: var(--glass-card); border: 1px solid var(--border-light);
+  backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-2xl); padding: var(--space-10);
   text-align: center; margin-bottom: var(--space-6);
 }
@@ -34,7 +35,8 @@
 .profile-stats {
   display: flex; align-items: center; justify-content: center;
   gap: var(--space-8);
-  background: var(--surface); border: 1px solid var(--border-light);
+  background: var(--glass-card); border: 1px solid var(--border-light);
+  backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-xl); padding: var(--space-6) var(--space-8);
   margin-bottom: var(--space-6);
 }
@@ -50,7 +52,8 @@
 .profile-stat-sep { width: 1px; height: 48px; background: var(--border-light); }
 
 .profile-ideas {
-  background: var(--surface); border: 1px solid var(--border-light);
+  background: var(--glass-card); border: 1px solid var(--border-light);
+  backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-2xl); padding: var(--space-6);
 }
 .profile-ideas-title {
@@ -115,7 +118,7 @@
 }
 .profile-empty-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(26,154,138,0.35);
+  box-shadow: 0 6px 20px rgba(255, 122, 0, 0.35);
 }
 
 @media (max-width: 640px) {

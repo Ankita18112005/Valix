@@ -8,6 +8,7 @@ import CreateIdea from './pages/CreateIdea';
 import IdeaDetail from './pages/IdeaDetail';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import { SearchProvider } from './context/SearchContext';
 
 export default function App() {
   const showToast = (message, type = 'success') => {
@@ -22,17 +23,19 @@ export default function App() {
 
   return (
     <Router>
-      <Toaster position="bottom-right" />
-      <Routes>
-        <Route path="/" element={<Landing showToast={showToast} />} />
-        <Route path="/login" element={<Login showToast={showToast} />} />
-        <Route path="/signup" element={<Signup showToast={showToast} />} />
-        <Route path="/home" element={<Home showToast={showToast} />} />
-        <Route path="/create" element={<CreateIdea showToast={showToast} />} />
-        <Route path="/idea/:id" element={<IdeaDetail showToast={showToast} />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<Profile />} />
-      </Routes>
+      <SearchProvider>
+        <Toaster position="bottom-right" />
+        <Routes>
+          <Route path="/" element={<Landing showToast={showToast} />} />
+          <Route path="/login" element={<Login showToast={showToast} />} />
+          <Route path="/signup" element={<Signup showToast={showToast} />} />
+          <Route path="/home" element={<Home showToast={showToast} />} />
+          <Route path="/create" element={<CreateIdea showToast={showToast} />} />
+          <Route path="/idea/:id" element={<IdeaDetail showToast={showToast} />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </SearchProvider>
     </Router>
   );
 }

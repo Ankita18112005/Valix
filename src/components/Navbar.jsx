@@ -1,10 +1,8 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import {
   Search,
   Plus,
-  Bell,
-  ChevronDown,
   User,
   LayoutDashboard,
   LogOut,
@@ -12,31 +10,27 @@ import {
   Home,
   Compass,
   Settings,
-  Sparkles,
   X,
 } from 'lucide-react';
-import NotificationsPanel from './NotificationsPanel';
+
 import { useAuth } from '../context/AuthContext';
+import { useSearch } from '../context/SearchContext';
 import './Navbar.css';
 
 export default function Navbar({ showToast }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { searchTermInput, setSearchTerm } = useSearch();
   const [searchFocused, setSearchFocused] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
+
   const profileRef = useRef(null);
-  const filterRef = useRef(null);
 
   useEffect(() => {
     const handleClick = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setShowProfile(false);
-      }
-      if (filterRef.current && !filterRef.current.contains(e.target)) {
-        setFilterOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -96,16 +90,21 @@ export default function Navbar({ showToast }) {
               <input
                 type="text"
                 placeholder="Search ideas..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchTermInput}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (location.pathname !== '/home' && e.target.value.trim() !== '') {
+                    navigate('/home');
+                  }
+                }}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
                 className="navbar-search-input"
               />
-              {searchQuery && (
+              {searchTermInput && (
                 <button
                   className="navbar-search-clear"
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => setSearchTerm('')}
                   type="button"
                 >
                   <X size={14} />
@@ -118,49 +117,9 @@ export default function Navbar({ showToast }) {
 
             {/* Actions cluster */}
             <div className="navbar-actions">
-              {/* Filter */}
-              <div className="navbar-filter-wrap" ref={filterRef}>
-                <button
-                  className={`navbar-icon-btn ${filterOpen ? 'active' : ''}`}
-                  onClick={() => setFilterOpen(!filterOpen)}
-                  id="nav-filter"
-                  title="Filter"
-                >
-                  <ChevronDown size={16} />
-                </button>
-                {filterOpen && (
-                  <div className="navbar-dropdown animate-fade-in-up">
-                    <div className="navbar-dropdown-label">Sort by</div>
-                    <button className="navbar-dropdown-item">
-                      <Sparkles size={14} /> Highest Score
-                    </button>
-                    <button className="navbar-dropdown-item">
-                      <Sparkles size={14} /> Most Votes
-                    </button>
-                    <button className="navbar-dropdown-item">
-                      <Sparkles size={14} /> Newest First
-                    </button>
-                    <div className="navbar-dropdown-divider" />
-                    <div className="navbar-dropdown-label">Tags</div>
-                    <button className="navbar-dropdown-item">AI & ML</button>
-                    <button className="navbar-dropdown-item">SaaS</button>
-                    <button className="navbar-dropdown-item">FinTech</button>
-                  </div>
-                )}
-              </div>
 
-              {/* Notifications */}
               {currentUser ? (
                 <>
-                  <button
-                    className="navbar-icon-btn navbar-bell"
-                    onClick={() => setShowNotifications(true)}
-                    id="nav-notifications"
-                    title="Notifications"
-                  >
-                    <Bell size={17} />
-                    <span className="navbar-bell-dot" />
-                  </button>
 
                   {/* New Idea CTA */}
                   <Link to="/create" className="navbar-create-btn" id="nav-create">
@@ -232,11 +191,6 @@ export default function Navbar({ showToast }) {
           </div>
         </div>
       </nav>
-
-      <NotificationsPanel
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-      />
     </>
   );
 }

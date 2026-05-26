@@ -17,7 +17,8 @@
 }
 .dash-stat-card {
   display: flex; align-items: center; gap: var(--space-4);
-  background: var(--surface); border: 1px solid var(--border-light);
+  background: var(--glass-card); border: 1px solid var(--border-light);
+  backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-xl); padding: var(--space-6);
   transition: all var(--transition-base);
 }
@@ -29,7 +30,7 @@
 }
 .dash-stat-primary .dash-stat-icon { background: var(--primary-light); color: var(--primary); }
 .dash-stat-accent .dash-stat-icon { background: var(--success-light); color: var(--accent); }
-.dash-stat-secondary .dash-stat-icon { background: #FDF2F4; color: var(--secondary-hover); }
+.dash-stat-secondary .dash-stat-icon { background: rgba(198, 138, 45, 0.1); color: var(--secondary); }
 .dash-stat-info { display: flex; flex-direction: column; }
 .dash-stat-value {
   font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold);
@@ -43,7 +44,8 @@
   gap: var(--space-6); margin-bottom: var(--space-8);
 }
 .dash-chart-card {
-  background: var(--surface); border: 1px solid var(--border-light);
+  background: var(--glass-card); border: 1px solid var(--border-light);
+  backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-xl); padding: var(--space-6);
 }
 .dash-chart-title {
@@ -54,7 +56,8 @@
 
 /* Ideas Table */
 .dash-ideas-card {
-  background: var(--surface); border: 1px solid var(--border-light);
+  background: var(--glass-card); border: 1px solid var(--border-light);
+  backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-xl); padding: var(--space-6);
 }
 .dash-ideas-header, .dash-ideas-row {

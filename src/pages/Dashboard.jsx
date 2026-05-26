@@ -32,13 +32,29 @@ export default function Dashboard() {
 
     const fetchUserIdeas = async () => {
       try {
-        const q = query(
-          collection(db, 'ideas'),
-          where('userId', '==', currentUser.uid),
-          orderBy('createdAt', 'desc')
-        );
-        const querySnapshot = await getDocs(q);
-        const ideasData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let ideasData = [];
+        try {
+          const q = query(
+            collection(db, 'ideas'),
+            where('userId', '==', currentUser.uid),
+            orderBy('createdAt', 'desc')
+          );
+          const querySnapshot = await getDocs(q);
+          ideasData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (indexErr) {
+          console.warn("Composite index may be missing, falling back to simple query:", indexErr);
+          const fallbackQ = query(
+            collection(db, 'ideas'),
+            where('userId', '==', currentUser.uid)
+          );
+          const querySnapshot = await getDocs(fallbackQ);
+          ideasData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          ideasData.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+            const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+            return bTime - aTime;
+          });
+        }
         setUserIdeas(ideasData);
       } catch (err) {
         console.error("Error fetching user ideas:", err);
@@ -105,8 +121,8 @@ export default function Dashboard() {
                   <YAxis tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} domain={[50, 100]} />
                   <Tooltip
                     contentStyle={{
-                      background: '#fff', border: '1px solid #E5E7EB',
-                      borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      background: 'var(--glass-card)', border: '1px solid var(--glass-border)',
+                      borderRadius: '12px', boxShadow: 'var(--shadow-md)', color: 'var(--text-primary)',
                       fontSize: '13px',
                     }}
                   />
@@ -130,8 +146,8 @@ export default function Dashboard() {
                   <YAxis tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{
-                      background: '#fff', border: '1px solid #E5E7EB',
-                      borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      background: 'var(--glass-card)', border: '1px solid var(--glass-border)',
+                      borderRadius: '12px', boxShadow: 'var(--shadow-md)', color: 'var(--text-primary)',
                       fontSize: '13px',
                     }}
                   />

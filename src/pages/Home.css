@@ -87,7 +87,7 @@
   box-shadow: var(--shadow-sm);
 }
 .sidebar-card.glass-card {
-  background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+  background: var(--glass-card); backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
 }
 .sidebar-title {
@@ -104,7 +104,7 @@
   padding: var(--space-3); border-radius: var(--radius-lg);
   transition: all var(--transition-fast); cursor: pointer; border: 1px solid transparent;
 }
-.sidebar-trend-item:hover { background: var(--bg); border-color: var(--border-light); transform: translateX(2px); }
+.sidebar-trend-item:hover { background: var(--surface-hover); border-color: var(--border-light); transform: translateX(2px); }
 .sidebar-trend-rank {
   width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
@@ -124,7 +124,7 @@
   padding: var(--space-3); border-radius: var(--radius-lg);
   transition: background var(--transition-fast); cursor: pointer; border: 1px solid transparent;
 }
-.sidebar-cat-item:hover { background: var(--bg); border-color: var(--border-light); }
+.sidebar-cat-item:hover { background: var(--surface-hover); border-color: var(--border-light); }
 .sidebar-cat-name { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-secondary); }
 .sidebar-cat-count {
   font-size: var(--font-size-xs); font-weight: var(--font-weight-bold);

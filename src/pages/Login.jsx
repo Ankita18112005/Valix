@@ -66,7 +66,7 @@ export default function Login({ showToast }) {
           onClick={handleGoogleSignIn}
           className={`auth-submit ${googleLoading ? 'loading' : ''}`}
           disabled={googleLoading}
-          style={{ marginBottom: '1.5rem', backgroundColor: '#fff', color: '#000', width: '100%' }}
+          style={{ marginBottom: '1.5rem', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', width: '100%' }}
         >
           {googleLoading ? <span className="auth-spinner" style={{ borderColor: 'rgba(0,0,0,0.2)', borderTopColor: '#000' }} /> : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../lib/firebase"; // Fixed import path
+import { generateKeywords } from "../lib/keywords";
 import Navbar from "../components/Navbar";
 import "./CreateIdea.css";
 
@@ -42,6 +43,8 @@ export default function CreateIdea({ showToast }) {
     setLoading(true);
 
     try {
+      const generatedKeywords = generateKeywords(title, problem, solution, targetUsers, monetization, ...tags);
+
       await addDoc(collection(db, "ideas"), {
         title,
         problem,
@@ -49,6 +52,7 @@ export default function CreateIdea({ showToast }) {
         targetUsers,
         monetization,
         tags,
+        keywords: generatedKeywords,
         userId: user.uid,
         author: { name: user.displayName || 'User' }, // Prevent crashing IdeaCard
         createdAt: serverTimestamp(),
@@ -68,8 +72,8 @@ export default function CreateIdea({ showToast }) {
       setMonetization("");
       setTags([]);
 
-      // Redirect back to feed
-      navigate('/home');
+      // Redirect to profile so user sees their new idea
+      navigate('/profile');
 
     } catch (error) {
       console.error("Submit error:", error);

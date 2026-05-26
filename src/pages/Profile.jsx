@@ -23,13 +23,33 @@ export default function Profile() {
 
     const fetchUserIdeas = async () => {
       try {
-        const q = query(
-          collection(db, 'ideas'),
-          where('userId', '==', currentUser.uid),
-          orderBy('createdAt', 'desc')
-        );
-        const querySnapshot = await getDocs(q);
-        const ideasData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let ideasData = [];
+        try {
+          // Try the compound query first (requires a composite index)
+          const q = query(
+            collection(db, 'ideas'),
+            where('userId', '==', currentUser.uid),
+            orderBy('createdAt', 'desc')
+          );
+          const querySnapshot = await getDocs(q);
+          ideasData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (indexErr) {
+          // Fallback: query without orderBy if composite index is missing,
+          // then sort client-side
+          console.warn("Composite index may be missing, falling back to simple query:", indexErr);
+          const fallbackQ = query(
+            collection(db, 'ideas'),
+            where('userId', '==', currentUser.uid)
+          );
+          const querySnapshot = await getDocs(fallbackQ);
+          ideasData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          // Sort by createdAt descending client-side
+          ideasData.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+            const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+            return bTime - aTime;
+          });
+        }
         setUserIdeas(ideasData);
       } catch (err) {
         console.error("Error fetching user ideas:", err);
