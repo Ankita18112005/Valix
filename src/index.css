@@ -386,3 +386,29 @@ ul, ol {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ── Logo Image & Containers ── */
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
+
+.navbar-logo-icon,
+.landing-logo-icon,
+.auth-logo-icon {
+  background: none !important;
+  box-shadow: 0 2px 8px rgba(255, 122, 0, 0.15) !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+}
+
+.navbar-logo:hover .navbar-logo-icon,
+.landing-logo:hover .landing-logo-icon,
+.auth-logo:hover .auth-logo-icon {
+  box-shadow: 0 4px 14px rgba(255, 122, 0, 0.35) !important;
+}
+

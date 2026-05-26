@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import emailjs from '@emailjs/browser';
 import { auth, provider, db } from '../lib/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updateProfile, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext();
@@ -13,8 +14,9 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  async function signInWithGoogle() {
+  async function signInWithGoogle(rememberMe = true) {
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
@@ -72,6 +74,7 @@ export function AuthProvider({ children }) {
     }
   }
 
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -85,11 +88,37 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  async function signInWithEmail(email, password) {
+  async function signInWithEmail(email, password, rememberMe = true) {
     try {
-      const result = await import('firebase/auth').then(({ signInWithEmailAndPassword }) => 
-        signInWithEmailAndPassword(auth, email, password)
-      );
+      const trimmedEmail = email.trim();
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      const { signInWithEmailAndPassword } = await import('firebase/auth');
+      const result = await signInWithEmailAndPassword(auth, trimmedEmail, password);
+      
+      // ==========================================
+      // EMAIL NOTIFICATION SYSTEM
+      // ==========================================
+      // We automatically send a login notification email using EmailJS.
+      try {
+        console.log('Preparing to send login email...');
+        console.log('Service ID:', import.meta.env.VITE_EMAILJS_SERVICE_ID);
+        console.log('Template ID:', import.meta.env.VITE_EMAILJS_TEMPLATE_ID);
+        
+        const response = await emailjs.send(
+          import.meta.env.VITE_EMAILJS_SERVICE_ID,
+          import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+          {
+            email: result.user.email
+          },
+          import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+        );
+        console.log('EmailJS successfully sent login notification!', response.status, response.text);
+      } catch (err) {
+        // If email fails, only console.error should happen. Login still works!
+        console.error('Failed to send login notification email:', err);
+      }
+      // ==========================================
+      
       return result.user;
     } catch (error) {
       console.error("Error signing in with email: ", error);

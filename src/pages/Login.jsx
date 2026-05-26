@@ -1,32 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Zap, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
 export default function Login({ showToast }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signInWithGoogle, signInWithEmail } = useAuth();
+  const { signInWithGoogle, signInWithEmail, currentUser } = useAuth();
   
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(location.state?.prefillEmail || '');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const from = location.state?.from?.pathname || '/home';
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate(from, { replace: true });
+    }
+  }, [currentUser, navigate, from]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithEmail(email, password);
-      showToast?.('Welcome back! 🎉', 'success');
+      await signInWithEmail(email.trim(), password, rememberMe);
+      showToast?.('Welcome back to ValiX 🚀', 'success');
       navigate(from, { replace: true });
     } catch (error) {
       console.error(error);
-      showToast?.('Invalid email or password.', 'error');
+      switch (error.code) {
+        case 'auth/user-not-found':
+          showToast?.('No account found with this email', 'error');
+          break;
+        case 'auth/wrong-password':
+          showToast?.('Incorrect password', 'error');
+          break;
+        case 'auth/invalid-email':
+          showToast?.('Please enter a valid email address', 'error');
+          break;
+        case 'auth/invalid-credential':
+          showToast?.('Incorrect email or password', 'error');
+          break;
+        case 'auth/too-many-requests':
+          showToast?.('Too many attempts. Please try again later.', 'error');
+          break;
+        default:
+          showToast?.('Failed to sign in. Please try again.', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -35,8 +60,8 @@ export default function Login({ showToast }) {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
-      showToast?.('Successfully signed in with Google!', 'success');
+      await signInWithGoogle(rememberMe);
+      showToast?.('Welcome back to ValiX 🚀', 'success');
       navigate(from, { replace: true });
     } catch (error) {
       showToast?.('Failed to sign in with Google.', 'error');
@@ -54,7 +79,9 @@ export default function Login({ showToast }) {
 
       <div className="auth-card animate-scale-in">
         <Link to="/" className="auth-logo">
-          <div className="auth-logo-icon"><Zap size={20} /></div>
+          <div className="auth-logo-icon">
+            <img src="/logo.png" alt="ValiX Logo" className="logo-img" />
+          </div>
           <span>ValiX</span>
         </Link>
 
@@ -95,6 +122,7 @@ export default function Login({ showToast }) {
               <input
                 id="login-email"
                 type="email"
+                autoComplete="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -111,6 +139,7 @@ export default function Login({ showToast }) {
               <input
                 id="login-password"
                 type={showPass ? 'text' : 'password'}
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -126,6 +155,16 @@ export default function Login({ showToast }) {
               </button>
             </div>
           </div>
+
+          <label className="auth-checkbox-wrap">
+            <input 
+              type="checkbox" 
+              className="auth-checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span className="auth-checkbox-label">Remember Me</span>
+          </label>
 
           <button
             type="submit"

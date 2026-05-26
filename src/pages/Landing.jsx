@@ -1,22 +1,27 @@
 import { Link } from 'react-router-dom';
 import {
-  Zap, Lightbulb, MessageSquare, BarChart3,
+  Lightbulb, MessageSquare, BarChart3,
   ArrowRight, Star, ChevronRight, ExternalLink, Mail
 } from 'lucide-react';
 import Stepper, { Step } from '../components/Stepper';
 import LightRays from '../components/LightRays';
 import SplitText from '../components/ui/SplitText';
 import { SparklesCore } from '../components/ui/SparklesCore';
+import { useAuth } from '../context/AuthContext';
 import './Landing.css';
 
 export default function Landing({ showToast }) {
+  const { currentUser } = useAuth();
+  
   return (
     <div className="landing" id="landing-page">
       {/* Navbar */}
       <nav className="landing-nav">
         <div className="landing-nav-inner">
           <Link to="/" className="landing-logo">
-            <div className="landing-logo-icon"><Zap size={20} /></div>
+            <div className="landing-logo-icon">
+              <img src="/logo.png" alt="ValiX Logo" className="logo-img" />
+            </div>
             <span>ValiX</span>
           </Link>
           <div className="landing-nav-links">
@@ -79,7 +84,12 @@ export default function Landing({ showToast }) {
                   Get Started Free
                   <ArrowRight size={18} />
                 </Link>
-                <Link to="/home" className="btn-secondary-lg">
+                <Link to={currentUser ? "/home" : "#"} onClick={(e) => {
+                  if (!currentUser) {
+                    e.preventDefault();
+                    showToast?.("At first you have to login", "info");
+                  }
+                }} className="btn-secondary-lg">
                   Explore Ideas
                   <ChevronRight size={18} />
                 </Link>
@@ -170,7 +180,9 @@ export default function Landing({ showToast }) {
         <div className="footer-inner">
           <div className="footer-brand">
             <div className="landing-logo">
-              <div className="landing-logo-icon"><Zap size={18} /></div>
+              <div className="landing-logo-icon">
+                <img src="/logo.png" alt="ValiX Logo" className="logo-img" />
+              </div>
               <span>ValiX</span>
             </div>
             <p className="footer-tagline">Validate before you build.</p>
@@ -190,7 +202,7 @@ export default function Landing({ showToast }) {
             </div>
             <div className="footer-col">
               <h4 className="footer-col-title">Connect</h4>
-              <a href="#" className="footer-link"><ExternalLink size={14} /> GitHub</a>
+              <a href="https://github.com/Ankita18112005/Valix" target="_blank" rel="noopener noreferrer" className="footer-link"><ExternalLink size={14} /> GitHub</a>
               <a href="#" className="footer-link"><Mail size={14} /> Contact</a>
             </div>
           </div>

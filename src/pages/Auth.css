@@ -116,3 +116,92 @@
   transition: color var(--transition-fast);
 }
 .auth-switch-link:hover { color: var(--primary-hover); }
+
+/* Checkbox Styling */
+.auth-checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+  cursor: pointer;
+}
+.auth-checkbox {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition-fast);
+}
+.auth-checkbox:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.auth-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.auth-checkbox-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+/* Forgot Password Link */
+.auth-forgot-link {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
+  text-align: right;
+  margin-top: var(--space-1);
+}
+.auth-forgot-link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* Success State */
+.auth-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.auth-success-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(26, 154, 138, 0.15), rgba(26, 154, 138, 0.05));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: var(--space-6);
+  animation: successPulse 2s ease-in-out infinite;
+}
+@keyframes successPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26, 154, 138, 0.2); }
+  50% { box-shadow: 0 0 0 12px rgba(26, 154, 138, 0); }
+}
+.auth-resend-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--surface);
+  color: var(--text-tertiary);
+  box-shadow: none;
+}
+.auth-resend-btn.disabled:hover {
+  transform: none;
+}

@@ -6,7 +6,6 @@ import {
   User,
   LayoutDashboard,
   LogOut,
-  Zap,
   Home,
   Compass,
   Settings,
@@ -46,7 +45,7 @@ export default function Navbar({ showToast }) {
           {/* Logo */}
           <Link to="/home" className="navbar-logo" id="nav-logo">
             <div className="navbar-logo-icon">
-              <Zap size={18} />
+              <img src="/logo.png" alt="ValiX Logo" className="logo-img" />
             </div>
             <span className="navbar-logo-text">ValiX</span>
           </Link>

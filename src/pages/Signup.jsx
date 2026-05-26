@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Zap, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
 export default function Signup({ showToast }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signInWithGoogle, signUpWithEmail } = useAuth();
+  const { signInWithGoogle, signUpWithEmail, currentUser } = useAuth();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -18,22 +18,31 @@ export default function Signup({ showToast }) {
   
   const from = location.state?.from?.pathname || '/home';
 
+  useEffect(() => {
+    if (currentUser) {
+      navigate(from, { replace: true });
+    }
+  }, [currentUser, navigate, from]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password.length < 8) {
-      showToast?.('Password must be at least 8 characters', 'error');
+    if (password.length < 6) {
+      showToast?.('Password must be at least 6 characters', 'error');
       return;
     }
     
     setLoading(true);
     try {
-      await signUpWithEmail(email, password, name);
-      showToast?.('Account created successfully! 🚀', 'success');
+      await signUpWithEmail(email.trim(), password, name.trim());
+      showToast?.('Account created successfully 🎉', 'success');
       navigate(from, { replace: true });
     } catch (error) {
       console.error(error);
       if (error.code === 'auth/email-already-in-use') {
-        showToast?.('This email is already registered.', 'error');
+        showToast?.('This account already exists. Redirecting to login...', 'info');
+        navigate('/login', { replace: true, state: { prefillEmail: email } });
+      } else if (error.code === 'auth/weak-password') {
+        showToast?.('Password should be at least 6 characters', 'error');
       } else {
         showToast?.('Failed to create account. Try again.', 'error');
       }
@@ -64,7 +73,9 @@ export default function Signup({ showToast }) {
 
       <div className="auth-card animate-scale-in">
         <Link to="/" className="auth-logo">
-          <div className="auth-logo-icon"><Zap size={20} /></div>
+          <div className="auth-logo-icon">
+            <img src="/logo.png" alt="ValiX Logo" className="logo-img" />
+          </div>
           <span>ValiX</span>
         </Link>
 
@@ -105,6 +116,7 @@ export default function Signup({ showToast }) {
               <input
                 id="signup-name"
                 type="text"
+                autoComplete="name"
                 placeholder="Alex Morgan"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -121,6 +133,7 @@ export default function Signup({ showToast }) {
               <input
                 id="signup-email"
                 type="email"
+                autoComplete="off"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -137,7 +150,8 @@ export default function Signup({ showToast }) {
               <input
                 id="signup-password"
                 type={showPass ? 'text' : 'password'}
-                placeholder="Min. 8 characters"
+                autoComplete="new-password"
+                placeholder="Min. 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="auth-input"

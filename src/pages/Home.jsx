@@ -7,7 +7,6 @@ import Navbar from '../components/Navbar';
 import IdeaCard from '../components/IdeaCard';
 import { useAuth } from '../context/AuthContext';
 import { useSearch } from '../context/SearchContext';
-import { runKeywordMigration } from '../lib/migrateKeywords';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Home.css';
 
@@ -119,14 +118,6 @@ export default function Home({ showToast }) {
           <div className="home-feed-header animate-fade-in-up">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h1 className="home-feed-title">Idea Feed</h1>
-              {currentUser && (
-                <button 
-                  onClick={runKeywordMigration}
-                  style={{ fontSize: '12px', padding: '4px 8px', background: '#eee', borderRadius: '4px', cursor: 'pointer', border: 'none' }}
-                >
-                  Run Search Migration
-                </button>
-              )}
             </div>
             <p className="home-feed-sub">Discover and validate startup ideas from the community</p>
           </div>

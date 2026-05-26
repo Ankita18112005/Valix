@@ -514,7 +514,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 3rem);
-  background: linear-gradient(135deg, rgba(255, 122, 0, 0.4) 0%, rgba(220, 38, 38, 0.4) 100%);
+  background: linear-gradient(135deg, rgba(255, 122, 0, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
   filter: blur(28px);
   border-radius: var(--radius-2xl);
   z-index: 0;
@@ -541,7 +541,7 @@
   box-shadow: 
     0 12px 40px rgba(0, 0, 0, 0.5),
     inset 0 0 0 1px rgba(255, 122, 0, 0.1),
-    inset 0 0 40px rgba(220, 38, 38, 0.15);
+    inset 0 0 40px rgba(220, 38, 38, 0.05);
 }
 
 .cta-title {
