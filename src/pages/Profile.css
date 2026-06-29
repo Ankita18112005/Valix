@@ -121,6 +121,53 @@
   box-shadow: 0 6px 20px rgba(255, 122, 0, 0.35);
 }
 
+/* Edit Profile Form */
+.profile-card { position: relative; }
+.profile-edit-toggle {
+  position: absolute; top: var(--space-6); right: var(--space-6);
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: 50%; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast);
+}
+.profile-edit-toggle:hover {
+  background: var(--surface-hover); color: var(--primary); border-color: var(--primary);
+}
+.profile-edit-form {
+  display: flex; flex-direction: column; gap: var(--space-4);
+  max-width: 480px; margin: 0 auto;
+}
+.profile-edit-input, .profile-edit-textarea {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4);
+  color: var(--text-primary); font-size: var(--font-size-sm);
+  outline: none; transition: all var(--transition-fast);
+  font-family: inherit;
+}
+.profile-edit-textarea { resize: vertical; min-height: 80px; }
+.profile-edit-input:focus, .profile-edit-textarea:focus {
+  border-color: var(--primary); background: var(--surface-hover);
+  box-shadow: 0 0 0 2px var(--primary-50);
+}
+.profile-edit-actions {
+  display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-2);
+}
+.profile-edit-btn {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm); font-weight: var(--font-weight-medium);
+  cursor: pointer; transition: all var(--transition-fast); border: none;
+}
+.profile-btn-cancel {
+  background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border-light);
+}
+.profile-btn-cancel:hover { background: var(--surface-hover); color: var(--text-primary); }
+.profile-btn-save {
+  background: var(--primary); color: white;
+}
+.profile-btn-save:hover { background: var(--primary-hover); box-shadow: var(--shadow-sm); }
+.profile-btn-save:disabled, .profile-btn-cancel:disabled { opacity: 0.7; cursor: not-allowed; }
+
 @media (max-width: 640px) {
   .profile-stats { flex-direction: column; gap: var(--space-4); }
   .profile-stat-sep { width: 48px; height: 1px; }

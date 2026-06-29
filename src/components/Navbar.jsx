@@ -8,9 +8,12 @@ import {
   LogOut,
   Home,
   Compass,
-  Settings,
   X,
+  Clock,
+  Trash2,
+  Menu,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuth } from '../context/AuthContext';
 import { useSearch } from '../context/SearchContext';
@@ -20,9 +23,50 @@ export default function Navbar({ showToast }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const { searchTermInput, setSearchTerm } = useSearch();
+  const { searchTermInput, setSearchTerm, clearSearch, searchInputRef, recentSearches, clearRecentSearches } = useSearch();
   const [searchFocused, setSearchFocused] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchWrapRef = useRef(null);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSuggestionClick = (term) => {
+    setSearchTerm(term);
+    setShowSuggestions(false);
+    if (location.pathname !== '/home') {
+      navigate('/home');
+    }
+  };
   const [showProfile, setShowProfile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef(null);
+
+  // Close mobile menu on outside click
+  useEffect(() => {
+    const handleMobileClick = (e) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+        setMobileMenuOpen(false);
+      }
+    };
+    if (mobileMenuOpen) {
+      document.addEventListener('mousedown', handleMobileClick);
+    }
+    return () => document.removeEventListener('mousedown', handleMobileClick);
+  }, [mobileMenuOpen]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const profileRef = useRef(null);
 
@@ -42,6 +86,15 @@ export default function Navbar({ showToast }) {
     <>
       <nav className="navbar" id="main-navbar">
         <div className="navbar-inner">
+          {/* Mobile Hamburger */}
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+
           {/* Logo */}
           <Link to="/home" className="navbar-logo" id="nav-logo">
             <div className="navbar-logo-icon">
@@ -84,34 +137,71 @@ export default function Navbar({ showToast }) {
           {/* Right Side: Search + Actions */}
           <div className="navbar-right">
             {/* Search */}
-            <div className={`navbar-search ${searchFocused ? 'focused' : ''}`} id="nav-search">
+            <div className={`navbar-search ${searchFocused ? 'focused' : ''}`} id="nav-search" ref={searchWrapRef}>
               <Search size={15} className="navbar-search-icon" />
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder="Search ideas..."
+                placeholder="Search ideas, tags, creators..."
                 value={searchTermInput}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
+                  setShowSuggestions(false);
                   if (location.pathname !== '/home' && e.target.value.trim() !== '') {
                     navigate('/home');
                   }
                 }}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
+                onFocus={() => {
+                  setSearchFocused(true);
+                  if (!searchTermInput) setShowSuggestions(true);
+                }}
+                onBlur={() => {
+                  setSearchFocused(false);
+                }}
                 className="navbar-search-input"
               />
               {searchTermInput && (
                 <button
                   className="navbar-search-clear"
-                  onClick={() => setSearchTerm('')}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    clearSearch();
+                    searchInputRef.current?.focus();
+                    setShowSuggestions(true);
+                  }}
                   type="button"
                 >
                   <X size={14} />
                 </button>
               )}
-              <div className="navbar-search-shortcut">
-                <kbd>⌘</kbd><kbd>K</kbd>
-              </div>
+              {!searchTermInput && (
+                <div className="navbar-search-shortcut">
+                  <kbd>⌘</kbd><kbd>K</kbd>
+                </div>
+              )}
+
+              {/* Recent Search Suggestions */}
+              {showSuggestions && recentSearches.length > 0 && !searchTermInput && (
+                <div className="search-suggestions animate-fade-in-up">
+                  <div className="search-suggestions-header">
+                    <span className="search-suggestions-label">Recent Searches</span>
+                    <button className="search-suggestions-clear" onMouseDown={(e) => e.preventDefault()} onClick={clearRecentSearches}>
+                      <Trash2 size={12} /> Clear
+                    </button>
+                  </div>
+                  {recentSearches.map((term, i) => (
+                    <button
+                      key={i}
+                      className="search-suggestion-item"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleSuggestionClick(term)}
+                    >
+                      <Clock size={13} />
+                      <span>{term}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Actions cluster */}
@@ -155,10 +245,6 @@ export default function Navbar({ showToast }) {
                           <LayoutDashboard size={15} />
                           Dashboard
                         </Link>
-                        <Link to="#" className="navbar-dropdown-item" onClick={() => setShowProfile(false)}>
-                          <Settings size={15} />
-                          Settings
-                        </Link>
                         <div className="navbar-dropdown-divider" />
                         <button 
                           className="navbar-dropdown-item navbar-dropdown-danger" 
@@ -190,6 +276,35 @@ export default function Navbar({ showToast }) {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div 
+            className="mobile-menu-overlay" 
+            ref={mobileMenuRef}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
+            <div className="mobile-menu-panel">
+              <Link to="/" className={`mobile-menu-item ${isActive('/') ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                <Home size={18} />
+                <span>Home</span>
+              </Link>
+              <Link to="/home" className={`mobile-menu-item ${isActive('/home') ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                <Compass size={18} />
+                <span>Explore</span>
+              </Link>
+              <Link to="/dashboard" className={`mobile-menu-item ${isActive('/dashboard') ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                <LayoutDashboard size={18} />
+                <span>Dashboard</span>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

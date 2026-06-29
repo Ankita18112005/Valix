@@ -14,6 +14,34 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  async function sendLoginNotificationEmail(user) {
+    try {
+      console.log('Preparing to send login notification email...');
+      console.log("Service ID:", import.meta.env.VITE_EMAILJS_SERVICE_ID);
+      console.log("Template ID:", import.meta.env.VITE_EMAILJS_TEMPLATE_ID);
+      console.log("Public Key:", import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
+
+      const response = await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          name: user.displayName || "User",
+          email: user.email,
+          time: new Date().toLocaleString(),
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      
+      console.log('Login notification email sent successfully!', response.status, response.text);
+    } catch (err) {
+      // Ensure the login process succeeds even if EmailJS fails
+      console.error('Failed to send login notification email:');
+      console.error('HTTP status:', err?.status);
+      console.error('error.text:', err?.text);
+      console.error('Full Error:', err);
+    }
+  }
+
   async function signInWithGoogle(rememberMe = true) {
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
@@ -32,6 +60,10 @@ export function AuthProvider({ children }) {
           createdAt: serverTimestamp()
         });
       }
+
+      // Send login notification email
+      await sendLoginNotificationEmail(user);
+
       return user;
     } catch (error) {
       console.error("Error signing in with Google: ", error);
@@ -61,6 +93,32 @@ export function AuthProvider({ children }) {
       return user;
     } catch (error) {
       console.error("Error signing up with email: ", error);
+      throw error;
+    }
+  }
+
+  async function updateUserProfileData(name, bio) {
+    try {
+      if (!auth.currentUser) throw new Error("No user is signed in.");
+      
+      // 1. Update Firebase Auth Profile (DisplayName)
+      await updateProfile(auth.currentUser, { displayName: name });
+      
+      // 2. Update Firestore User Document (name and bio)
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(userRef, { name, bio }, { merge: true });
+      
+      // 3. Force local state update
+      setCurrentUser({
+        uid: auth.currentUser.uid,
+        email: auth.currentUser.email,
+        displayName: name,
+        photoURL: auth.currentUser.photoURL
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating profile: ", error);
       throw error;
     }
   }
@@ -95,29 +153,8 @@ export function AuthProvider({ children }) {
       const { signInWithEmailAndPassword } = await import('firebase/auth');
       const result = await signInWithEmailAndPassword(auth, trimmedEmail, password);
       
-      // ==========================================
-      // EMAIL NOTIFICATION SYSTEM
-      // ==========================================
-      // We automatically send a login notification email using EmailJS.
-      try {
-        console.log('Preparing to send login email...');
-        console.log('Service ID:', import.meta.env.VITE_EMAILJS_SERVICE_ID);
-        console.log('Template ID:', import.meta.env.VITE_EMAILJS_TEMPLATE_ID);
-        
-        const response = await emailjs.send(
-          import.meta.env.VITE_EMAILJS_SERVICE_ID,
-          import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-          {
-            email: result.user.email
-          },
-          import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-        );
-        console.log('EmailJS successfully sent login notification!', response.status, response.text);
-      } catch (err) {
-        // If email fails, only console.error should happen. Login still works!
-        console.error('Failed to send login notification email:', err);
-      }
-      // ==========================================
+      // Send login notification email
+      await sendLoginNotificationEmail(result.user);
       
       return result.user;
     } catch (error) {
@@ -131,6 +168,7 @@ export function AuthProvider({ children }) {
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,
+    updateUserProfileData,
     logout
   };
 

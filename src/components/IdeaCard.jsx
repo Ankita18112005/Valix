@@ -1,18 +1,21 @@
 import { Link } from 'react-router-dom';
-import { ThumbsUp, DollarSign, HelpCircle, MessageCircle, Clock, Bookmark, Users } from 'lucide-react';
+import { ThumbsUp, DollarSign, HelpCircle, MessageCircle, Clock, Users } from 'lucide-react';
 import './IdeaCard.css';
+
+const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const HighlightText = ({ text, highlight }) => {
   if (!highlight || !text) return text;
   
-  const regex = new RegExp(`(${highlight})`, 'gi');
+  const escaped = escapeRegExp(highlight);
+  const regex = new RegExp(`(${escaped})`, 'gi');
   const parts = String(text).split(regex);
   
   return (
     <>
       {parts.map((part, i) => 
         part.toLowerCase() === highlight.toLowerCase() ? (
-          <mark key={i} style={{ backgroundColor: 'var(--primary-50)', color: 'inherit', padding: '0 2px', borderRadius: '2px', fontWeight: '500' }}>
+          <mark key={i} style={{ backgroundColor: 'var(--primary-50)', color: 'var(--primary)', padding: '0 2px', borderRadius: '2px', fontWeight: '600' }}>
             {part}
           </mark>
         ) : (
@@ -114,7 +117,7 @@ export default function IdeaCard({ idea, onVote, forceScore, highlightTerm }) {
 
       <div className="idea-card-tags">
         {idea.tags?.map((tag) => (
-          <span key={tag} className="idea-tag">{tag}</span>
+          <span key={tag} className="idea-tag"><HighlightText text={tag} highlight={highlightTerm} /></span>
         ))}
       </div>
 
@@ -155,9 +158,6 @@ export default function IdeaCard({ idea, onVote, forceScore, highlightTerm }) {
             <MessageCircle size={16} />
             <span>{commentCount}</span>
           </Link>
-          <button className="idea-action-btn neutral icon-only" title="Save Idea">
-            <Bookmark size={16} />
-          </button>
         </div>
       </div>
     </div>

@@ -1,65 +1,38 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { TrendingUp, Tag, Search, Filter, Hash } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment, getDocs, where } from 'firebase/firestore';
+import { TrendingUp, Tag, Search, Filter, Hash, Lightbulb, X } from 'lucide-react';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import Navbar from '../components/Navbar';
 import IdeaCard from '../components/IdeaCard';
 import { useAuth } from '../context/AuthContext';
 import { useSearch } from '../context/SearchContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchFilter } from '../hooks/useSearchFilter';
+import { motion } from 'framer-motion';
 import './Home.css';
 
 export default function Home({ showToast }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
-  const { searchTerm, isSearching } = useSearch();
+  const { searchTerm, isSearching, clearSearch } = useSearch();
   const [ideaList, setIdeaList] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Single Firestore fetch with real-time listener (NO per-keypress queries)
   useEffect(() => {
     setLoading(true);
-
-    if (searchTerm) {
-      const fetchSearchResults = async () => {
-        try {
-          const q = query(
-            collection(db, 'ideas'),
-            where('keywords', 'array-contains', searchTerm.toLowerCase())
-          );
-          const snapshot = await getDocs(q);
-          const ideasData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          // Sort client-side to avoid needing a composite index
-          ideasData.sort((a, b) => {
-            const timeA = a.createdAt?.toMillis?.() || Date.parse(a.createdAt) || 0;
-            const timeB = b.createdAt?.toMillis?.() || Date.parse(b.createdAt) || 0;
-            return timeB - timeA;
-          });
-          setIdeaList(ideasData);
-        } catch (error) {
-          console.error("Error fetching search results:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchSearchResults();
-    } else {
-      const q = query(collection(db, 'ideas'), orderBy('createdAt', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const ideasData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setIdeaList(ideasData);
-        setLoading(false);
-      });
-      return () => unsubscribe();
-    }
-  }, [searchTerm]);
+    const q = query(collection(db, 'ideas'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ideasData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setIdeaList(ideasData);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const calculateInfo = (idea) => {
     const u = idea.votes?.useful || 0;
@@ -77,7 +50,8 @@ export default function Home({ showToast }) {
     });
   }, [ideaList]);
 
-  const filteredIdeas = processedIdeas; // Filtering is now done via Firestore
+  // Client-side filtering using the custom hook
+  const filteredIdeas = useSearchFilter(processedIdeas, searchTerm);
 
   const handleVote = async (id, type) => {
     if (!currentUser) {
@@ -101,7 +75,6 @@ export default function Home({ showToast }) {
       await updateDoc(ideaRef, {
         [`votes.${type}`]: increment(1)
       });
-      // Not awaiting the score update to save writes/time, we compute on front end anyway
       const labels = { useful: '👍 Useful', wouldPay: '💰 Would Pay', needsWork: '🤔 Needs Work' };
       showToast?.(`Voted: ${labels[type]}`, 'success');
     } catch (error) {
@@ -114,13 +87,23 @@ export default function Home({ showToast }) {
     <div className="home-page" id="home-page">
       <Navbar showToast={showToast} />
       <div className="home-layout">
-        <main className="home-feed" style={{ maxWidth: '800px', margin: '0 auto', gridColumn: '1 / -1' }}>
+        <main className="home-feed" style={{ maxWidth: '600px', margin: '0 auto', gridColumn: '1 / -1', padding: '0 var(--space-2)' }}>
           <div className="home-feed-header animate-fade-in-up">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h1 className="home-feed-title">Idea Feed</h1>
             </div>
             <p className="home-feed-sub">Discover and validate startup ideas from the community</p>
           </div>
+
+          {/* Active Search Indicator */}
+          {searchTerm && (
+            <div className="search-active-bar animate-fade-in-up">
+              <span>Showing results for "<strong>{searchTerm}</strong>" — {filteredIdeas.length} idea{filteredIdeas.length !== 1 ? 's' : ''} found</span>
+              <button className="search-clear-btn" onClick={clearSearch}>
+                <X size={14} /> Clear
+              </button>
+            </div>
+          )}
 
           <div className="home-feed-list">
             {(loading || isSearching) ? (
@@ -140,15 +123,27 @@ export default function Home({ showToast }) {
                  key={idea.id} 
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}
-                 transition={{ delay: i * 0.1, duration: 0.4 }}
+                 transition={{ delay: i * 0.05, duration: 0.3 }}
               >
                 <IdeaCard idea={idea} onVote={handleVote} forceScore={idea.calculatedScore} highlightTerm={searchTerm} />
               </motion.div>
             )) : (
-               <div className="empty-state">
-                  <div className="empty-icon"><Search size={32} /></div>
-                  <h3>No matching ideas found {searchTerm ? `for "${searchTerm}"` : ''} 🚀</h3>
-                  <p>Try adjusting your search to find what you're looking for.</p>
+               <div className="no-results-state animate-fade-in-up">
+                  <div className="no-results-icon">
+                    <Lightbulb size={40} />
+                  </div>
+                  <h3 className="no-results-title">No matching ideas</h3>
+                  <p className="no-results-desc">
+                    {searchTerm 
+                      ? `We couldn't find any ideas matching "${searchTerm}". Try another keyword or category.`
+                      : 'No ideas have been submitted yet. Be the first!'
+                    }
+                  </p>
+                  {searchTerm && (
+                    <button className="no-results-btn" onClick={clearSearch}>
+                      <X size={16} /> Clear Search
+                    </button>
+                  )}
                </div>
             )}
           </div>
