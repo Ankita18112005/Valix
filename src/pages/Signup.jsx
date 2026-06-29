@@ -54,11 +54,7 @@ export default function Signup({ showToast }) {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const result = await signInWithGoogle();
-      if (result && result.isRedirect) {
-        // Stop execution to allow browser redirect to happen
-        return;
-      }
+      await signInWithGoogle();
       showToast?.('Successfully signed in with Google!', 'success');
       navigate(from, { replace: true });
     } catch (error) {

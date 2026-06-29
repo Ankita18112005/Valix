@@ -60,11 +60,7 @@ export default function Login({ showToast }) {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const result = await signInWithGoogle(rememberMe);
-      if (result && result.isRedirect) {
-        // Stop execution to allow browser redirect to happen
-        return;
-      }
+      await signInWithGoogle(rememberMe);
       showToast?.('Welcome back to ValiX 🚀', 'success');
       navigate(from, { replace: true });
     } catch (error) {
