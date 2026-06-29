@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
       
       if (isMobile) {
         await signInWithRedirect(auth, provider);
-        return; // Will redirect the page
+        return { isRedirect: true };
       }
 
       const result = await signInWithPopup(auth, provider);
