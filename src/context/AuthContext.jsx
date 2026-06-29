@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import emailjs from '@emailjs/browser';
 import { auth, provider, db } from '../lib/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updateProfile, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updateProfile, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext();
@@ -45,6 +45,15 @@ export function AuthProvider({ children }) {
   async function signInWithGoogle(rememberMe = true) {
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      
+      // Check if mobile device to use redirect instead of popup
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+        return; // Will redirect the page
+      }
+
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
@@ -134,6 +143,33 @@ export function AuthProvider({ children }) {
 
 
   useEffect(() => {
+    // Handle redirect result for mobile Google Sign-In
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          const user = result.user;
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+
+          if (!userSnap.exists()) {
+            await setDoc(userRef, {
+              name: user.displayName,
+              email: user.email,
+              role: 'user',
+              createdAt: serverTimestamp()
+            });
+          }
+          
+          await sendLoginNotificationEmail(user);
+        }
+      } catch (error) {
+        console.error("Error handling Google redirect result: ", error);
+      }
+    };
+
+    handleRedirectResult();
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
