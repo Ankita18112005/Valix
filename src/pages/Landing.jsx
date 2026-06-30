@@ -1,7 +1,9 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Lightbulb, MessageSquare, BarChart3,
-  ArrowRight, Star, ChevronRight, ExternalLink, Mail
+  ArrowRight, Star, ChevronRight, ExternalLink, Mail,
+  User, LayoutDashboard, ShieldCheck, LogOut
 } from 'lucide-react';
 import Stepper, { Step } from '../components/Stepper';
 import LightRays from '../components/LightRays';
@@ -9,9 +11,22 @@ import SplitText from '../components/ui/SplitText';
 import { SparklesCore } from '../components/ui/SparklesCore';
 import { useAuth } from '../context/AuthContext';
 import './Landing.css';
+import '../components/Navbar.css';
 
 export default function Landing({ showToast }) {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
+  const [showProfile, setShowProfile] = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setShowProfile(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
   
   return (
     <div className="landing" id="landing-page">
@@ -25,11 +40,71 @@ export default function Landing({ showToast }) {
             <span>ValiX</span>
           </Link>
           <div className="landing-nav-links">
-            <Link to="/login" className="landing-nav-link">Log In</Link>
-            <Link to="/signup" className="landing-nav-btn">
-              Get Started
-              <ArrowRight size={16} />
-            </Link>
+            {currentUser ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <Link to="/home" className="landing-nav-link" style={{ marginRight: '0.5rem' }}>Explore</Link>
+                <div className="navbar-profile-wrap" ref={profileRef}>
+                  <button
+                    className={`navbar-avatar ${showProfile ? 'active' : ''}`}
+                    onClick={() => setShowProfile(!showProfile)}
+                    id="nav-avatar"
+                  >
+                    <span className="navbar-avatar-letter">{currentUser.displayName ? currentUser.displayName[0].toUpperCase() : 'U'}</span>
+                  </button>
+                  {showProfile && (
+                    <div className="navbar-dropdown navbar-profile-dropdown animate-fade-in-up">
+                      <div className="navbar-profile-header">
+                        <div className="navbar-profile-avatar-lg">
+                          <span>{currentUser.displayName ? currentUser.displayName[0].toUpperCase() : 'U'}</span>
+                        </div>
+                        <div className="navbar-profile-info">
+                          <div className="navbar-profile-name">{currentUser.displayName || 'User'}</div>
+                          <div className="navbar-profile-email">{currentUser.email}</div>
+                        </div>
+                      </div>
+                      <div className="navbar-dropdown-divider" />
+                      <Link to="/profile" className="navbar-dropdown-item" onClick={() => setShowProfile(false)}>
+                        <User size={15} />
+                        Profile
+                      </Link>
+                      <Link to="/dashboard" className="navbar-dropdown-item" onClick={() => setShowProfile(false)}>
+                        <LayoutDashboard size={15} />
+                        Dashboard
+                      </Link>
+                      <Link to="/admin" className="navbar-dropdown-item" onClick={() => setShowProfile(false)}>
+                        <ShieldCheck size={15} />
+                        Admin
+                      </Link>
+                      <div className="navbar-dropdown-divider" />
+                      <button 
+                        className="navbar-dropdown-item navbar-dropdown-danger" 
+                        onClick={async () => {
+                          setShowProfile(false);
+                          try {
+                            await logout();
+                            showToast?.('Logged out successfully', 'success');
+                          } catch(e) {
+                            console.error(e);
+                          }
+                        }}
+                        style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        <LogOut size={15} />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                <Link to="/login" className="landing-nav-link">Log In</Link>
+                <Link to="/signup" className="landing-nav-btn">
+                  Get Started
+                  <ArrowRight size={16} />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>

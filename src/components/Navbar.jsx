@@ -12,6 +12,7 @@ import {
   Clock,
   Trash2,
   Menu,
+  ShieldCheck,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -245,6 +246,10 @@ export default function Navbar({ showToast }) {
                           <LayoutDashboard size={15} />
                           Dashboard
                         </Link>
+                        <Link to="/admin" className="navbar-dropdown-item" onClick={() => setShowProfile(false)}>
+                          <ShieldCheck size={15} />
+                          Admin
+                        </Link>
                         <div className="navbar-dropdown-divider" />
                         <button 
                           className="navbar-dropdown-item navbar-dropdown-danger" 
@@ -300,6 +305,10 @@ export default function Navbar({ showToast }) {
               <Link to="/dashboard" className={`mobile-menu-item ${isActive('/dashboard') ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 <LayoutDashboard size={18} />
                 <span>Dashboard</span>
+              </Link>
+              <Link to="/admin" className={`mobile-menu-item ${isActive('/admin') ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                <ShieldCheck size={18} />
+                <span>Admin</span>
               </Link>
             </div>
           </motion.div>

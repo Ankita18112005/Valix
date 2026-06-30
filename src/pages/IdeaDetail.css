@@ -84,7 +84,8 @@
   transition: all var(--transition-fast); min-width: 120px;
 }
 .detail-vote-btn:hover { transform: translateY(-2px); }
-.vote-useful-lg:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+.vote-useful-lg:hover,
+.vote-useful-lg.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
 .vote-pay-lg:hover { border-color: var(--accent); background: var(--success-light); color: var(--accent); }
 .vote-improve-lg:hover { border-color: var(--warning); background: var(--warning-light); color: var(--warning); }
 .detail-vote-label { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }

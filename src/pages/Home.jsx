@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { TrendingUp, Tag, Search, Filter, Hash, Lightbulb, X } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, setDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import Navbar from '../components/Navbar';
 import IdeaCard from '../components/IdeaCard';
@@ -60,11 +60,25 @@ export default function Home({ showToast }) {
       return;
     }
 
+    const ideaToVote = ideaList.find(i => i.id === id);
+    if (!ideaToVote) return;
+    
+    const hasVoted = ideaToVote.votedUsers?.includes(currentUser.uid);
+
     // Optimistically update UI
     setIdeaList((prev) =>
       prev.map((idea) =>
         idea.id === id
-          ? { ...idea, votes: { ...idea.votes, [type]: (idea.votes?.[type] || 0) + 1 } }
+          ? { 
+              ...idea, 
+              votedUsers: hasVoted 
+                ? (idea.votedUsers || []).filter(uid => uid !== currentUser.uid)
+                : [...(idea.votedUsers || []), currentUser.uid],
+              votes: { 
+                ...idea.votes, 
+                [type]: hasVoted ? Math.max((idea.votes?.[type] || 0) - 1, 0) : (idea.votes?.[type] || 0) + 1 
+              } 
+            }
           : idea
       )
     );
@@ -72,11 +86,12 @@ export default function Home({ showToast }) {
     // Save vote to Firestore
     try {
       const ideaRef = doc(db, 'ideas', id);
-      await updateDoc(ideaRef, {
-        [`votes.${type}`]: increment(1)
-      });
-      const labels = { useful: '👍 Useful', wouldPay: '💰 Would Pay', needsWork: '🤔 Needs Work' };
-      showToast?.(`Voted: ${labels[type]}`, 'success');
+      await setDoc(ideaRef, {
+        votes: {
+          [type]: hasVoted ? increment(-1) : increment(1)
+        },
+        votedUsers: hasVoted ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+      }, { merge: true });
     } catch (error) {
       console.error("Error voting:", error);
       showToast?.('Failed to save vote', 'error');

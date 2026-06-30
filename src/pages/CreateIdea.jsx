@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { X, ShieldAlert } from "lucide-react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "../lib/firebase"; // Fixed import path
+import { db, auth } from "../lib/firebase";
 import { generateKeywords } from "../lib/keywords";
+import { checkDuplicateIdea } from "../services/duplicateDetection";
+import { moderateIdea } from "../services/ideaModeration";
 import Navbar from "../components/Navbar";
 import "./CreateIdea.css";
 
@@ -16,6 +18,10 @@ export default function CreateIdea({ showToast }) {
   const [monetization, setMonetization] = useState("");
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Moderation & Progress States
+  const [progressStep, setProgressStep] = useState(null); // null | 'analyzing' | 'quality' | 'duplicates' | 'saving'
+  const [rejectionModal, setRejectionModal] = useState({ show: false, reasons: [] });
 
   const tagOptions = [
     "AI", "SaaS", "FinTech", "EdTech", "HealthTech", "CleanTech", 
@@ -34,36 +40,90 @@ export default function CreateIdea({ showToast }) {
     e.preventDefault();
 
     const user = auth.currentUser;
-
     if (!user) {
       alert("Please login first");
       return;
     }
 
     setLoading(true);
+    setProgressStep("analyzing");
+    const reasons = [];
+
+    const ideaInput = { title, problem, solution, targetUsers, monetization, tags };
 
     try {
-      const generatedKeywords = generateKeywords(title, problem, solution, targetUsers, monetization, ...tags);
+      // 1. AI Quality & Spam Validation
+      setProgressStep("quality");
+      const modResult = await moderateIdea(ideaInput);
 
-      await addDoc(collection(db, "ideas"), {
-        title,
-        problem,
-        solution,
-        targetUsers,
-        monetization,
-        tags,
-        keywords: generatedKeywords,
+      if (!modResult.passed) {
+        reasons.push(...modResult.reasons);
+      }
+
+      // 2. Duplicate Detection
+      setProgressStep("duplicates");
+      const dupResult = await checkDuplicateIdea(ideaInput);
+
+      if (dupResult.isDuplicate) {
+        reasons.push(`Too similar to existing idea: "${dupResult.similarIdea.title}" (${dupResult.score}% match)`);
+      }
+
+      // 3. Evaluate results: All or nothing
+      if (reasons.length > 0) {
+        // Validation failed, DO NOT save to main ideas
+        
+        // (Optional) Log to rejected metric silently in the background
+        addDoc(collection(db, "rejected_ideas"), {
+          ...ideaInput,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+          status: "rejected",
+          rejectionReasons: reasons,
+          isSpam: true
+        }).catch(err => console.error("Failed to log rejected idea:", err));
+
+        setRejectionModal({ show: true, reasons });
+        setLoading(false);
+        setProgressStep(null);
+        return; // Halt submission completely
+      }
+
+      // 4. Save to Firestore directly if all good
+      const ideaToSave = {
+        ...ideaInput,
+        keywords: generateKeywords(title, problem, solution, targetUsers, monetization, ...tags),
         userId: user.uid,
-        author: { name: user.displayName || 'User' }, // Prevent crashing IdeaCard
+        author: { name: user.displayName || 'User' },
         createdAt: serverTimestamp(),
         upvotes: 0,
         commentsCount: 0,
         validationScore: 0,
-        votes: { useful: 0, wouldPay: 0, needsWork: 0 } // Prevent crashing IdeaCard
-      });
+        votes: { useful: 0, wouldPay: 0, needsWork: 0 },
+        qualityScore: modResult.qualityScore,
+        qualityLevel: modResult.qualityLevel,
+        aiReview: {
+          qualityScore: modResult.qualityScore,
+          qualityLevel: modResult.qualityLevel,
+        }
+      };
 
-      alert("Idea submitted successfully 🚀");
+      await saveIdea(ideaToSave);
 
+    } catch (error) {
+      console.error("Submit error:", error);
+      alert("Failed to submit idea. Check console.");
+      setLoading(false);
+      setProgressStep(null);
+    }
+  };
+
+  const saveIdea = async (ideaData) => {
+    setProgressStep("saving");
+    setLoading(true);
+    try {
+      await addDoc(collection(db, "ideas"), ideaData);
+      showToast("Idea submitted successfully 🚀");
+      
       // Reset form
       setTitle("");
       setProblem("");
@@ -71,16 +131,15 @@ export default function CreateIdea({ showToast }) {
       setTargetUsers("");
       setMonetization("");
       setTags([]);
-
-      // Redirect to profile so user sees their new idea
+      
       navigate('/profile');
-
     } catch (error) {
-      console.error("Submit error:", error);
-      alert("Failed to submit idea. Check console.");
+      console.error("Save error:", error);
+      alert("Failed to save idea.");
+    } finally {
+      setLoading(false);
+      setProgressStep(null);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -169,14 +228,56 @@ export default function CreateIdea({ showToast }) {
 
           <button
             type="submit"
-            className={`create-submit ${loading ? 'loading' : ''}`}
+            className={`create-submit ${loading && !progressStep ? 'loading' : ''}`}
             disabled={loading}
             id="create-submit"
           >
-            {loading ? <span className="auth-spinner" /> : 'Submit for Validation'}
+            {loading && !progressStep ? <span className="auth-spinner" /> : 'Submit for Validation'}
           </button>
         </form>
       </div>
+
+      {/* Progress Overlay */}
+      {progressStep && (
+        <div className="mod-overlay">
+          <div className="mod-progress-box">
+            <div className="auth-spinner mod-spinner" />
+            <h3 className="mod-title">
+              {progressStep === 'analyzing' && "Analyzing your startup idea..."}
+              {progressStep === 'quality' && "Running AI validation..."}
+              {progressStep === 'duplicates' && "Checking duplicates..."}
+              {progressStep === 'saving' && "Saving..."}
+            </h3>
+          </div>
+        </div>
+      )}
+
+      {/* Unified Rejection Modal */}
+      {rejectionModal.show && (
+        <div className="mod-overlay">
+          <div className="mod-modal mod-reject">
+            <button className="mod-close-btn" onClick={() => setRejectionModal({ show: false, reasons: [] })}>
+              <X size={20} />
+            </button>
+            <ShieldAlert size={48} className="mod-icon error" />
+            <h2 className="mod-title">Idea Rejected</h2>
+            <p className="mod-desc">Your submission did not meet the validation criteria.</p>
+            
+            <div className="mod-reason-box" style={{ textAlign: "left" }}>
+              <strong>Reasons:</strong>
+              <ul style={{ marginTop: "8px", marginLeft: "20px" }}>
+                {rejectionModal.reasons.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+            </div>
+            
+            <button className="mod-btn primary" onClick={() => setRejectionModal({ show: false, reasons: [] })}>
+              Edit Idea
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

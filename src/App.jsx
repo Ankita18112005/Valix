@@ -8,6 +8,7 @@ import CreateIdea from './pages/CreateIdea';
 import IdeaDetail from './pages/IdeaDetail';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import AdminDashboard from './pages/AdminDashboard';
 import { SearchProvider } from './context/SearchContext';
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/idea/:id" element={<IdeaDetail showToast={showToast} />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </SearchProvider>
     </Router>

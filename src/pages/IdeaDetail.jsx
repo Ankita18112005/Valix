@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ThumbsUp, DollarSign, HelpCircle, User, Calendar,
 } from 'lucide-react';
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
@@ -47,20 +47,26 @@ export default function IdeaDetail({ showToast }) {
       return;
     }
 
+    const hasVoted = idea.votedUsers?.includes(currentUser.uid);
+
     try {
       const ideaRef = doc(db, 'ideas', id);
-      await updateDoc(ideaRef, {
-        [`votes.${type}`]: increment(1)
-      });
+      await setDoc(ideaRef, {
+        votes: {
+          [type]: hasVoted ? increment(-1) : increment(1)
+        },
+        votedUsers: hasVoted ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+      }, { merge: true });
       setIdea(prev => ({
         ...prev,
+        votedUsers: hasVoted
+          ? (prev.votedUsers || []).filter(uid => uid !== currentUser.uid)
+          : [...(prev.votedUsers || []), currentUser.uid],
         votes: {
           ...prev.votes,
-          [type]: (prev.votes?.[type] || 0) + 1
+          [type]: hasVoted ? Math.max((prev.votes?.[type] || 0) - 1, 0) : (prev.votes?.[type] || 0) + 1
         }
       }));
-      const labels = { useful: '👍 Useful', wouldPay: '💰 Would Pay', needsWork: '🤔 Needs Work' };
-      showToast?.(`Voted: ${labels[type]}`, 'success');
     } catch (e) {
        console.error("Error voting:", e);
     }
@@ -128,20 +134,13 @@ export default function IdeaDetail({ showToast }) {
         <div className="detail-vote-section animate-fade-in-up delay-2">
           <h3 className="detail-vote-title">Cast your vote</h3>
           <div className="detail-vote-buttons">
-            <button className="detail-vote-btn vote-useful-lg" onClick={() => handleVote('useful')}>
+            <button 
+              className={`detail-vote-btn vote-useful-lg ${idea.votedUsers?.includes(currentUser?.uid) ? 'active' : ''}`} 
+              onClick={() => handleVote('useful')}
+            >
               <ThumbsUp size={20} />
               <span className="detail-vote-label">Useful</span>
               <span className="detail-vote-count">{idea.votes?.useful || 0}</span>
-            </button>
-            <button className="detail-vote-btn vote-pay-lg" onClick={() => handleVote('wouldPay')}>
-              <DollarSign size={20} />
-              <span className="detail-vote-label">Would Pay</span>
-              <span className="detail-vote-count">{idea.votes?.wouldPay || 0}</span>
-            </button>
-            <button className="detail-vote-btn vote-improve-lg" onClick={() => handleVote('needsWork')}>
-              <HelpCircle size={20} />
-              <span className="detail-vote-label">Needs Work</span>
-              <span className="detail-vote-count">{idea.votes?.needsWork || 0}</span>
             </button>
           </div>
         </div>
