@@ -1,0 +1,51 @@
+/* ══════════════════════════════════════
+   RoleBadge — Role pill badges
+   ══════════════════════════════════════ */
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-weight: var(--font-weight-medium, 500);
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.role-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.role-badge-md {
+  font-size: var(--font-size-xs, 0.75rem);
+  padding: 4px 10px;
+}
+
+.role-badge-sm {
+  font-size: 10px;
+  padding: 2px 7px;
+}
+
+.role-badge-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.role-badge-sm .role-badge-icon {
+  font-size: 10px;
+}
+
+.role-badge-label {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.role-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}

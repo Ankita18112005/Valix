@@ -8,7 +8,8 @@ import CreateIdea from './pages/CreateIdea';
 import IdeaDetail from './pages/IdeaDetail';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
-import AdminDashboard from './pages/AdminDashboard';
+import PublicProfile from './pages/PublicProfile';
+import ProjectWorkspace from './pages/ProjectWorkspace';
 import { SearchProvider } from './context/SearchContext';
 
 export default function App() {
@@ -35,7 +36,8 @@ export default function App() {
           <Route path="/idea/:id" element={<IdeaDetail showToast={showToast} />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/profile/:id" element={<PublicProfile />} />
+          <Route path="/workspace/:id" element={<ProjectWorkspace />} />
         </Routes>
       </SearchProvider>
     </Router>

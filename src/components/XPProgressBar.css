@@ -1,0 +1,76 @@
+/* ══════════════════════════════════════
+   XPProgressBar — Level & XP display
+   ══════════════════════════════════════ */
+
+.xp-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.xp-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.xp-progress-level {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.xp-level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+.xp-level-name {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.xp-progress-text {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.xp-bar-track {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-hover, #262626);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 999px;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  min-width: 4px;
+}
+
+/* Compact variant */
+.xp-progress-compact .xp-progress-header {
+  gap: 8px;
+}
+
+.xp-progress-compact .xp-bar-track {
+  height: 6px;
+}
+
+.xp-progress-compact .xp-level-name {
+  font-size: var(--font-size-xs, 0.75rem);
+}

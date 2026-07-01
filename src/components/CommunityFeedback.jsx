@@ -107,21 +107,17 @@ const CommunityFeedback = ({ ideaId }) => {
 
   const RatingStars = ({ value, setValue }) => {
     return (
-      <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+      <div className="flex gap-1 mt-2">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            size={20}
+            size={24}
             onClick={() => setValue(star)}
-            style={{
-              cursor: 'pointer',
-              transition: 'color 0.15s, fill 0.15s, transform 0.15s',
-              fill: star <= value ? '#FBBF24' : 'none',
-              color: star <= value ? '#FBBF24' : '#D1D5DB',
-              transform: star <= value ? 'scale(1.1)' : 'scale(1)',
-            }}
-            onMouseEnter={(e) => { if (star > value) e.currentTarget.style.color = '#FCD34D'; }}
-            onMouseLeave={(e) => { if (star > value) e.currentTarget.style.color = '#D1D5DB'; }}
+            className={`cursor-pointer transition-colors duration-150 ${
+              star <= value
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-gray-300 hover:text-yellow-300"
+            }`}
           />
         ))}
       </div>
@@ -129,264 +125,112 @@ const CommunityFeedback = ({ ideaId }) => {
   };
 
   return (
-      <div
-        id="comments-section"
-        style={{
-          maxWidth: '56rem',
-          margin: '2rem auto 0',
-          background: 'var(--glass-card)',
-          backdropFilter: 'var(--glass-blur)',
-          borderRadius: '16px',
-          border: '1px solid var(--glass-border)',
-          boxShadow: 'var(--shadow-md)',
-          overflow: 'hidden',
-        }}
-      >
-      {/* ── Feedback Form Section ── */}
-      <div style={{ padding: '28px 32px 24px' }}>
-        <h2 style={{
-          fontSize: '1.25rem',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}>
-          <MessageSquareDashed size={22} style={{ color: 'var(--primary)' }} />
-          Community Feedback
-          <span style={{
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
-            marginLeft: '4px',
-          }}>
-            ({feedbacks.length})
-          </span>
+    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 mt-8" id="comments-section">
+      <Toaster position="top-right" />
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Community Feedback ({feedbacks.length})
         </h2>
+      </div>
 
-        <textarea
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          placeholder="What's your take on this idea?"
-          rows={4}
-          style={{
-            width: '100%',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '14px 16px',
-            fontSize: '0.9375rem',
-            lineHeight: '1.6',
-            color: 'var(--text-primary)',
-            resize: 'vertical',
-            outline: 'none',
-            transition: 'all 0.2s',
-            background: 'var(--surface)',
-          }}
-          onFocus={(e) => {
-            e.target.style.borderColor = 'var(--primary)';
-            e.target.style.boxShadow = '0 0 0 3px var(--primary-50)';
-            e.target.style.background = 'var(--surface-hover)';
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = 'var(--border)';
-            e.target.style.boxShadow = 'none';
-            e.target.style.background = 'var(--surface)';
-          }}
-        />
-
-        {/* Rating Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-          gap: '12px',
-          marginTop: '16px',
-        }}>
-          {[
-            { label: 'Problem Clarity', value: clarity, setter: setClarity, emoji: '🎯' },
-            { label: 'Market Demand', value: market, setter: setMarket, emoji: '📈' },
-            { label: 'Execution Difficulty', value: difficulty, setter: setDifficulty, emoji: '⚙️' },
-          ].map(({ label, value: val, setter, emoji }) => (
-            <div key={label} style={{
-              background: 'var(--surface)',
-              borderRadius: '10px',
-              padding: '14px 16px',
-              border: '1px solid var(--border-light)',
-              transition: 'border-color 0.2s',
-            }}>
-              <div style={{
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}>
-                <span>{emoji}</span> {label}
-              </div>
-              <RatingStars value={val} setValue={setter} />
-            </div>
-          ))}
+      <div className="space-y-6">
+        <div>
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="What's your take on this idea?"
+            className="w-full h-32 border border-gray-300 rounded-lg p-4 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-y text-base text-gray-800"
+          />
         </div>
 
-        {/* Submit Button */}
-        <div style={{ marginTop: '20px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <h3 className="font-semibold text-gray-700 text-sm">Problem Clarity</h3>
+            <RatingStars value={clarity} setValue={setClarity} />
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <h3 className="font-semibold text-gray-700 text-sm">Market Demand</h3>
+            <RatingStars value={market} setValue={setMarket} />
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <h3 className="font-semibold text-gray-700 text-sm">Execution Difficulty</h3>
+            <RatingStars value={difficulty} setValue={setDifficulty} />
+          </div>
+        </div>
+
+        <div className="flex justify-start pt-2">
           <button
             onClick={handleSubmitFeedback}
             disabled={loading}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: loading ? 'var(--text-tertiary)' : 'var(--gradient-primary)',
-              color: '#fff',
-              padding: '10px 24px',
-              borderRadius: '10px',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: '0 2px 8px rgba(79,70,229,0.25)',
-              transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s',
-              opacity: loading ? 0.7 : 1,
-            }}
-            onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(79,70,229,0.35)'; }}}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(79,70,229,0.25)'; }}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm disabled:opacity-50 transition-colors w-full sm:w-auto"
           >
-            <Send size={16} />
+            <Send size={18} />
             {loading ? "Submitting..." : "Submit Feedback"}
           </button>
         </div>
       </div>
 
-      {/* ── Responses Section ── */}
-      <div style={{
-        borderTop: '1px solid var(--border-light)',
-        background: 'var(--bg)',
-        padding: '24px 32px 28px',
-      }}>
-        <h3 style={{
-          fontSize: '1rem',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          marginBottom: '16px',
-          letterSpacing: '-0.01em',
-        }}>
+      <div className="mt-12 pt-8 border-t border-gray-200">
+        <h3 className="text-xl font-bold mb-4 text-gray-900">
           Community Responses
         </h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {feedbacks.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                background: 'var(--glass-card)',
-                backdropFilter: 'var(--glass-blur)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '12px',
-                padding: '18px 20px',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--glass-border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              {/* Author row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  background: 'var(--primary-light)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--primary)',
-                  flexShrink: 0,
-                }}>
-                  <User size={16} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{
-                    fontSize: '0.8125rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    lineHeight: 1.3,
-                    textTransform: 'capitalize',
-                  }}>
-                    {item.userName || 'Anonymous'}
-                  </p>
-                  <p style={{
-                    fontSize: '0.6875rem',
-                    color: 'var(--text-tertiary)',
-                    lineHeight: 1.3,
-                  }}>
-                    {item.createdAt?.toDate
-                      ? item.createdAt.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
-                      : "Just now"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Feedback text */}
-              <p style={{
-                fontSize: '0.875rem',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.65,
-                marginBottom: '12px',
-              }}>
-                {item.feedback || item.text}
-              </p>
-
-              {/* Rating badges */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {[
-                  { label: 'Problem', val: item.clarity || item.ratings?.problemClarity || item.problemClarity || 0 },
-                  { label: 'Demand', val: item.market || item.ratings?.marketDemand || item.marketDemand || 0 },
-                  { label: 'Difficulty', val: item.difficulty || item.ratings?.executionDifficulty || item.executionDifficulty || 0 },
-                ].map(({ label, val }) => (
-                  <div key={label} style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '8px',
-                    padding: '5px 10px',
-                  }}>
-                    <span style={{
-                      fontSize: '0.6875rem',
-                      fontWeight: 600,
-                      color: 'var(--text-secondary)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.03em',
-                    }}>{label}</span>
-                    <span style={{ fontSize: '0.75rem', lineHeight: 1 }}>
-                      {val > 0 ? "⭐".repeat(val) : <span style={{ color: '#D1D5DB', fontSize: '0.6875rem' }}>—</span>}
-                    </span>
+        
+        <div className="space-y-6">
+            {feedbacks.map((item, i) => (
+              <div
+                key={item.id}
+                className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <User size={20} />
                   </div>
-                ))}
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{item.userName || 'Anonymous'}</p>
+                    <p className="text-xs text-gray-500">
+                      {item.createdAt?.toDate
+                        ? item.createdAt.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+                        : "Just now"}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 text-base leading-relaxed mb-4">
+                  {item.feedback || item.text}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <div className="bg-gray-50 rounded px-3 py-1.5 border border-gray-200 flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-600">Problem</span>
+                    <div className="flex gap-0.5">
+                      {"⭐".repeat(item.clarity || item.ratings?.problemClarity || item.problemClarity || 0)}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded px-3 py-1.5 border border-gray-200 flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-600">Demand</span>
+                    <div className="flex gap-0.5">
+                      {"⭐".repeat(item.market || item.ratings?.marketDemand || item.marketDemand || 0)}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded px-3 py-1.5 border border-gray-200 flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-600">Difficulty</span>
+                    <div className="flex gap-0.5">
+                      {"⭐".repeat(item.difficulty || item.ratings?.executionDifficulty || item.executionDifficulty || 0)}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
 
           {feedbacks.length === 0 && (
-            <div style={{
-              textAlign: 'center',
-              padding: '32px 16px',
-            }}>
-              <MessageSquareDashed size={36} style={{ color: 'var(--text-tertiary)', margin: '0 auto 12px' }} />
-              <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 500 }}>
-                No responses yet
-              </p>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
-                Be the first to share your thoughts with the community!
-              </p>
+            <div className="py-6">
+              <p className="text-gray-600 text-lg mb-4">Be the first to share your thoughts with the community!</p>
+              <button
+                onClick={() => document.querySelector('textarea').focus()}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2 rounded-lg font-medium transition-colors text-sm border border-gray-200 shadow-sm"
+              >
+                Write a response
+              </button>
             </div>
           )}
         </div>

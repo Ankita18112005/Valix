@@ -17,6 +17,19 @@ export default function CreateIdea({ showToast }) {
   const [targetUsers, setTargetUsers] = useState("");
   const [monetization, setMonetization] = useState("");
   const [tags, setTags] = useState([]);
+  
+  // Team States
+  const [teamEnabled, setTeamEnabled] = useState(false);
+  const [maxMembers, setMaxMembers] = useState(4);
+  const [teamRoles, setTeamRoles] = useState({
+    'Frontend Developer': false,
+    'Backend Developer': false,
+    'UI Designer': false,
+    'AI Engineer': false,
+    'Marketing': false,
+    'Business': false,
+  });
+
   const [loading, setLoading] = useState(false);
 
   // Moderation & Progress States
@@ -24,7 +37,7 @@ export default function CreateIdea({ showToast }) {
   const [rejectionModal, setRejectionModal] = useState({ show: false, reasons: [] });
 
   const tagOptions = [
-    "AI", "SaaS", "FinTech", "EdTech", "HealthTech", "CleanTech", 
+    "AI", "SaaS", "FinTech", "EdTech", "HealthTech", "CleanTech",
     "DevTools", "B2B", "B2C", "Mobile", "Marketplace", "Social"
   ];
 
@@ -34,6 +47,10 @@ export default function CreateIdea({ showToast }) {
     } else {
       setTags([...tags, tag]);
     }
+  };
+
+  const toggleTeamRole = (role) => {
+    setTeamRoles(prev => ({ ...prev, [role]: !prev[role] }));
   };
 
   const handleSubmit = async (e) => {
@@ -71,7 +88,7 @@ export default function CreateIdea({ showToast }) {
       // 3. Evaluate results: All or nothing
       if (reasons.length > 0) {
         // Validation failed, DO NOT save to main ideas
-        
+
         // (Optional) Log to rejected metric silently in the background
         addDoc(collection(db, "rejected_ideas"), {
           ...ideaInput,
@@ -86,6 +103,19 @@ export default function CreateIdea({ showToast }) {
         setLoading(false);
         setProgressStep(null);
         return; // Halt submission completely
+      }
+
+      // Construct Team object if enabled
+      let teamData = null;
+      if (teamEnabled) {
+        const selectedRoles = Object.entries(teamRoles)
+          .filter(([_, isSelected]) => isSelected)
+          .map(([title, _]) => ({ title, filled: false, filledBy: null }));
+        
+        teamData = {
+          maxMembers,
+          roles: selectedRoles
+        };
       }
 
       // 4. Save to Firestore directly if all good
@@ -104,7 +134,9 @@ export default function CreateIdea({ showToast }) {
         aiReview: {
           qualityScore: modResult.qualityScore,
           qualityLevel: modResult.qualityLevel,
-        }
+        },
+        teamEnabled,
+        team: teamData,
       };
 
       await saveIdea(ideaToSave);
@@ -123,7 +155,7 @@ export default function CreateIdea({ showToast }) {
     try {
       await addDoc(collection(db, "ideas"), ideaData);
       showToast("Idea submitted successfully 🚀");
-      
+
       // Reset form
       setTitle("");
       setProblem("");
@@ -131,7 +163,7 @@ export default function CreateIdea({ showToast }) {
       setTargetUsers("");
       setMonetization("");
       setTags([]);
-      
+
       navigate('/profile');
     } catch (error) {
       console.error("Save error:", error);
@@ -226,6 +258,51 @@ export default function CreateIdea({ showToast }) {
             <span className="form-hint">Select relevant categories for your idea</span>
           </div>
 
+          <div className="form-group team-section">
+            <div className="team-toggle-header" onClick={() => setTeamEnabled(!teamEnabled)}>
+              <div className="team-toggle-info">
+                <label className="form-label" style={{margin: 0, cursor: 'pointer'}}>Build a Team</label>
+                <span className="form-hint">Allow other users to apply to join this startup</span>
+              </div>
+              <div className={`switch ${teamEnabled ? 'active' : ''}`}>
+                <div className="switch-knob"></div>
+              </div>
+            </div>
+
+            {teamEnabled && (
+              <div className="team-config animate-fade-in-up">
+                <div className="form-group">
+                  <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                    <label className="form-label">Max Team Members</label>
+                    <span className="team-max-val">{maxMembers} members</span>
+                  </div>
+                  <input 
+                    type="range" min="2" max="10" 
+                    value={maxMembers} onChange={(e) => setMaxMembers(parseInt(e.target.value))}
+                    className="team-slider"
+                  />
+                </div>
+
+                <div className="form-group" style={{marginTop: '16px'}}>
+                  <label className="form-label">Required Roles</label>
+                  <div className="team-roles-grid">
+                    {Object.keys(teamRoles).map((role) => (
+                      <label key={role} className={`role-checkbox ${teamRoles[role] ? 'active' : ''}`}>
+                        <input 
+                          type="checkbox" 
+                          checked={teamRoles[role]} 
+                          onChange={() => toggleTeamRole(role)} 
+                          style={{display: 'none'}}
+                        />
+                        {role}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             type="submit"
             className={`create-submit ${loading && !progressStep ? 'loading' : ''}`}
@@ -262,7 +339,7 @@ export default function CreateIdea({ showToast }) {
             <ShieldAlert size={48} className="mod-icon error" />
             <h2 className="mod-title">Idea Rejected</h2>
             <p className="mod-desc">Your submission did not meet the validation criteria.</p>
-            
+
             <div className="mod-reason-box" style={{ textAlign: "left" }}>
               <strong>Reasons:</strong>
               <ul style={{ marginTop: "8px", marginLeft: "20px" }}>
@@ -271,7 +348,7 @@ export default function CreateIdea({ showToast }) {
                 ))}
               </ul>
             </div>
-            
+
             <button className="mod-btn primary" onClick={() => setRejectionModal({ show: false, reasons: [] })}>
               Edit Idea
             </button>

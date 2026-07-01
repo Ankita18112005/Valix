@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ThumbsUp, DollarSign, HelpCircle, MessageCircle, Clock, Users, Trash2 } from 'lucide-react';
+import { ThumbsUp, DollarSign, HelpCircle, MessageCircle, Clock, Users, Trash2, Bookmark } from 'lucide-react';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
@@ -65,7 +65,14 @@ const ScoreIndicator = ({ score }) => {
   );
 };
 
-export default function IdeaCard({ idea, onVote, forceScore, highlightTerm }) {
+export default function IdeaCard({ 
+  idea, 
+  onVote, 
+  onBookmark,
+  isBookmarked,
+  forceScore, 
+  highlightTerm 
+}) {
   const { currentUser } = useAuth();
 
   const getScoreLabel = (score) => {
@@ -152,6 +159,17 @@ export default function IdeaCard({ idea, onVote, forceScore, highlightTerm }) {
           >
             <ThumbsUp size={16} />
             <span>{idea.votes?.useful || 0}</span>
+          </button>
+          
+          <button
+            className={`idea-action-btn bookmark-btn ${isBookmarked ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              onBookmark?.(idea.id);
+            }}
+            title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Idea'}
+          >
+            <Bookmark size={16} fill={isBookmarked ? 'currentColor' : 'none'} />
           </button>
         </div>
 

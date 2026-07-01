@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import emailjs from '@emailjs/browser';
 import { auth, provider, db } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updateProfile, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -12,6 +12,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   async function sendLoginNotificationEmail(user) {
@@ -31,7 +32,7 @@ export function AuthProvider({ children }) {
         },
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       );
-      
+
       console.log('Login notification email sent successfully!', response.status, response.text);
     } catch (err) {
       // Ensure the login process succeeds even if EmailJS fails
@@ -48,7 +49,7 @@ export function AuthProvider({ children }) {
 
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      
+
       // Check if user exists in Firestore
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
@@ -76,7 +77,7 @@ export function AuthProvider({ children }) {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const user = result.user;
-      
+
       // Update the user's profile with their name
       await updateProfile(user, {
         displayName: name
@@ -90,7 +91,7 @@ export function AuthProvider({ children }) {
         role: 'user',
         createdAt: serverTimestamp()
       });
-      
+
       return user;
     } catch (error) {
       console.error("Error signing up with email: ", error);
@@ -101,14 +102,14 @@ export function AuthProvider({ children }) {
   async function updateUserProfileData(name, bio) {
     try {
       if (!auth.currentUser) throw new Error("No user is signed in.");
-      
+
       // 1. Update Firebase Auth Profile (DisplayName)
       await updateProfile(auth.currentUser, { displayName: name });
-      
+
       // 2. Update Firestore User Document (name and bio)
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userRef, { name, bio }, { merge: true });
-      
+
       // 3. Force local state update
       setCurrentUser({
         uid: auth.currentUser.uid,
@@ -116,7 +117,7 @@ export function AuthProvider({ children }) {
         displayName: name,
         photoURL: auth.currentUser.photoURL
       });
-      
+
       return true;
     } catch (error) {
       console.error("Error updating profile: ", error);
@@ -135,16 +136,39 @@ export function AuthProvider({ children }) {
 
 
   useEffect(() => {
+    let unsubFirestore = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
+
+        // Listen to Firestore user document in real-time
+        const userRef = doc(db, 'users', user.uid);
+        unsubFirestore = onSnapshot(userRef, (snap) => {
+          if (snap.exists()) {
+            setUserData({ id: snap.id, ...snap.data() });
+          } else {
+            setUserData(null);
+          }
+        }, (err) => {
+          console.warn('Error listening to user doc:', err);
+          setUserData(null);
+        });
       } else {
         setCurrentUser(null);
+        setUserData(null);
+        if (unsubFirestore) {
+          unsubFirestore();
+          unsubFirestore = null;
+        }
       }
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (unsubFirestore) unsubFirestore();
+    };
   }, []);
 
   async function signInWithEmail(email, password, rememberMe = true) {
@@ -153,10 +177,10 @@ export function AuthProvider({ children }) {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const { signInWithEmailAndPassword } = await import('firebase/auth');
       const result = await signInWithEmailAndPassword(auth, trimmedEmail, password);
-      
+
       // Send login notification email
       await sendLoginNotificationEmail(result.user);
-      
+
       return result.user;
     } catch (error) {
       console.error("Error signing in with email: ", error);
@@ -166,6 +190,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
+    userData,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,

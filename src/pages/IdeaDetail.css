@@ -101,3 +101,116 @@
   .detail-vote-btn { min-width: unset; }
   .comment-form-ratings { flex-direction: column; gap: var(--space-3); }
 }
+
+/* -- Team Section -- */
+.detail-team-section {
+  background: var(--surface);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-top: var(--space-6);
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-team-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+
+.detail-team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.detail-team-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.detail-team-title h3 {
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.detail-apply-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.detail-apply-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+.detail-team-desc {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-5);
+}
+.detail-team-desc strong {
+  color: var(--text-primary);
+}
+
+.detail-team-roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.detail-team-role {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.detail-team-role.open {
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+.detail-team-role.open svg {
+  color: var(--warning);
+}
+
+.detail-team-role.filled {
+  border-color: var(--success);
+  background: rgba(34, 197, 94, 0.05);
+}
+.detail-team-role.filled svg {
+  color: var(--success);
+}
+
+.role-name {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.role-status {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.detail-team-role.open .role-status { color: var(--warning); }
+.detail-team-role.filled .role-status { color: var(--success); }

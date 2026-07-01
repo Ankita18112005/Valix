@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { TrendingUp, Tag, Search, Filter, Hash, Lightbulb, X } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy, doc, setDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { TrendingUp, Tag, Search, Filter, Hash, Lightbulb, X, Bookmark } from 'lucide-react';
+import { collection, onSnapshot, query, orderBy, doc, setDoc, getDoc, deleteDoc, increment, arrayUnion, arrayRemove, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import Navbar from '../components/Navbar';
 import IdeaCard from '../components/IdeaCard';
@@ -18,6 +18,8 @@ export default function Home({ showToast }) {
   const { searchTerm, isSearching, clearSearch } = useSearch();
   const [ideaList, setIdeaList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
+  const [showSaved, setShowSaved] = useState(false);
 
   // Single Firestore fetch with real-time listener (NO per-keypress queries)
   useEffect(() => {
@@ -33,6 +35,28 @@ export default function Home({ showToast }) {
     });
     return () => unsubscribe();
   }, []);
+
+  // Fetch user's bookmarks
+  useEffect(() => {
+    if (!currentUser) {
+      setBookmarkedIds(new Set());
+      return;
+    }
+
+    const bookmarkQ = query(
+      collection(db, 'bookmarks'),
+      where('userId', '==', currentUser.uid)
+    );
+
+    const unsub = onSnapshot(bookmarkQ, (snap) => {
+      const ids = new Set(snap.docs.map(d => d.data().ideaId));
+      setBookmarkedIds(ids);
+    }, (err) => {
+      console.warn("Bookmarks query error:", err);
+    });
+
+    return () => unsub();
+  }, [currentUser]);
 
   const calculateInfo = (idea) => {
     const u = idea.votes?.useful || 0;
@@ -52,6 +76,14 @@ export default function Home({ showToast }) {
 
   // Client-side filtering using the custom hook
   const filteredIdeas = useSearchFilter(processedIdeas, searchTerm);
+
+  // Apply saved filter
+  const displayIdeas = useMemo(() => {
+    if (showSaved) {
+      return filteredIdeas.filter(idea => bookmarkedIds.has(idea.id));
+    }
+    return filteredIdeas;
+  }, [filteredIdeas, showSaved, bookmarkedIds]);
 
   const handleVote = async (id, type) => {
     if (!currentUser) {
@@ -98,6 +130,54 @@ export default function Home({ showToast }) {
     }
   };
 
+  const handleBookmark = async (ideaId) => {
+    if (!currentUser) {
+      showToast?.('Sign in to bookmark ideas', 'error');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    const bookmarkDocId = `${currentUser.uid}_${ideaId}`;
+    const bookmarkRef = doc(db, 'bookmarks', bookmarkDocId);
+    const isCurrentlyBookmarked = bookmarkedIds.has(ideaId);
+
+    // Optimistic update
+    setBookmarkedIds(prev => {
+      const next = new Set(prev);
+      if (isCurrentlyBookmarked) {
+        next.delete(ideaId);
+      } else {
+        next.add(ideaId);
+      }
+      return next;
+    });
+
+    try {
+      if (isCurrentlyBookmarked) {
+        await deleteDoc(bookmarkRef);
+      } else {
+        await setDoc(bookmarkRef, {
+          userId: currentUser.uid,
+          ideaId: ideaId,
+          createdAt: new Date()
+        });
+      }
+    } catch (error) {
+      console.error("Error bookmarking:", error);
+      showToast?.('Failed to save bookmark', 'error');
+      // Revert optimistic update
+      setBookmarkedIds(prev => {
+        const next = new Set(prev);
+        if (isCurrentlyBookmarked) {
+          next.add(ideaId);
+        } else {
+          next.delete(ideaId);
+        }
+        return next;
+      });
+    }
+  };
+
   return (
     <div className="home-page" id="home-page">
       <Navbar showToast={showToast} />
@@ -108,12 +188,30 @@ export default function Home({ showToast }) {
               <h1 className="home-feed-title">Idea Feed</h1>
             </div>
             <p className="home-feed-sub">Discover and validate startup ideas from the community</p>
+            
+            {/* Filter Tabs */}
+            {currentUser && (
+              <div className="home-filter-tabs" style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                <button 
+                  className={`home-filter-tab ${!showSaved ? 'active' : ''}`}
+                  onClick={() => setShowSaved(false)}
+                >
+                  <Lightbulb size={14} /> All Ideas
+                </button>
+                <button 
+                  className={`home-filter-tab ${showSaved ? 'active' : ''}`}
+                  onClick={() => setShowSaved(true)}
+                >
+                  <Bookmark size={14} /> Saved ({bookmarkedIds.size})
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Active Search Indicator */}
           {searchTerm && (
             <div className="search-active-bar animate-fade-in-up">
-              <span>Showing results for "<strong>{searchTerm}</strong>" — {filteredIdeas.length} idea{filteredIdeas.length !== 1 ? 's' : ''} found</span>
+              <span>Showing results for "<strong>{searchTerm}</strong>" — {displayIdeas.length} idea{displayIdeas.length !== 1 ? 's' : ''} found</span>
               <button className="search-clear-btn" onClick={clearSearch}>
                 <X size={14} /> Clear
               </button>
@@ -133,30 +231,46 @@ export default function Home({ showToast }) {
                    </div>
                  </div>
                ))
-            ) : filteredIdeas.length > 0 ? filteredIdeas.map((idea, i) => (
+            ) : displayIdeas.length > 0 ? displayIdeas.map((idea, i) => (
               <motion.div 
                  key={idea.id} 
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}
                  transition={{ delay: i * 0.05, duration: 0.3 }}
               >
-                <IdeaCard idea={idea} onVote={handleVote} forceScore={idea.calculatedScore} highlightTerm={searchTerm} />
+                <IdeaCard 
+                  idea={idea} 
+                  onVote={handleVote} 
+                  onBookmark={handleBookmark}
+                  isBookmarked={bookmarkedIds.has(idea.id)}
+                  forceScore={idea.calculatedScore} 
+                  highlightTerm={searchTerm} 
+                />
               </motion.div>
             )) : (
                <div className="no-results-state animate-fade-in-up">
                   <div className="no-results-icon">
-                    <Lightbulb size={40} />
+                    {showSaved ? <Bookmark size={40} /> : <Lightbulb size={40} />}
                   </div>
-                  <h3 className="no-results-title">No matching ideas</h3>
+                  <h3 className="no-results-title">
+                    {showSaved ? 'No saved ideas' : 'No matching ideas'}
+                  </h3>
                   <p className="no-results-desc">
-                    {searchTerm 
-                      ? `We couldn't find any ideas matching "${searchTerm}". Try another keyword or category.`
-                      : 'No ideas have been submitted yet. Be the first!'
+                    {showSaved
+                      ? 'Bookmark ideas you like to see them here.'
+                      : searchTerm 
+                        ? `We couldn't find any ideas matching "${searchTerm}". Try another keyword or category.`
+                        : 'No ideas have been submitted yet. Be the first!'
                     }
                   </p>
                   {searchTerm && (
                     <button className="no-results-btn" onClick={clearSearch}>
                       <X size={16} /> Clear Search
+                    </button>
+                  )}
+                  {showSaved && (
+                    <button className="no-results-btn" onClick={() => setShowSaved(false)}>
+                      <Lightbulb size={16} /> Browse All Ideas
                     </button>
                   )}
                </div>

@@ -300,3 +300,100 @@
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* -- Team Section -- */
+.team-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.team-toggle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.team-toggle-info {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Switch Toggle */
+.switch {
+  width: 44px;
+  height: 24px;
+  background: var(--surface-hover);
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.3s;
+}
+.switch.active {
+  background: var(--primary);
+}
+.switch-knob {
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.switch.active .switch-knob {
+  transform: translateX(20px);
+}
+
+.team-config {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.team-max-val {
+  font-size: var(--font-size-sm);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.team-slider {
+  width: 100%;
+  margin-top: var(--space-2);
+  accent-color: var(--primary);
+}
+
+.team-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.role-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.role-checkbox:hover {
+  border-color: var(--text-tertiary);
+}
+.role-checkbox.active {
+  border-color: var(--primary);
+  background: rgba(255, 122, 0, 0.05);
+  color: var(--primary);
+}

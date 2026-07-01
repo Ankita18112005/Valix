@@ -13,11 +13,15 @@ import {
   Trash2,
   Menu,
   ShieldCheck,
+  Bell,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuth } from '../context/AuthContext';
 import { useSearch } from '../context/SearchContext';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import NotificationsPanel from './NotificationsPanel';
 import './Navbar.css';
 
 export default function Navbar({ showToast }) {
@@ -27,7 +31,27 @@ export default function Navbar({ showToast }) {
   const { searchTermInput, setSearchTerm, clearSearch, searchInputRef, recentSearches, clearRecentSearches } = useSearch();
   const [searchFocused, setSearchFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const searchWrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setUnreadCount(0);
+      return;
+    }
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', currentUser.uid),
+      where('read', '==', false)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setUnreadCount(snap.docs.length);
+    }, (error) => {
+      console.warn("Error fetching unread notifications count:", error);
+    });
+    return () => unsub();
+  }, [currentUser]);
 
   // Close suggestions on outside click
   useEffect(() => {
@@ -211,6 +235,20 @@ export default function Navbar({ showToast }) {
               {currentUser ? (
                 <>
 
+                  {/* Notifications */}
+                  <button 
+                    className="nav-icon-btn"
+                    onClick={() => setShowNotifications(true)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center' }}
+                  >
+                    <Bell size={20} />
+                    {unreadCount > 0 && <span className="nav-badge" style={{
+                      position: 'absolute', top: -4, right: -4, width: 16, height: 16, 
+                      background: 'var(--primary)', color: 'white', fontSize: 10,
+                      borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                  </button>
+
                   {/* New Idea CTA */}
                   <Link to="/create" className="navbar-create-btn" id="nav-create">
                     <Plus size={17} strokeWidth={2.5} />
@@ -245,10 +283,6 @@ export default function Navbar({ showToast }) {
                         <Link to="/dashboard" className="navbar-dropdown-item" onClick={() => setShowProfile(false)}>
                           <LayoutDashboard size={15} />
                           Dashboard
-                        </Link>
-                        <Link to="/admin" className="navbar-dropdown-item" onClick={() => setShowProfile(false)}>
-                          <ShieldCheck size={15} />
-                          Admin
                         </Link>
                         <div className="navbar-dropdown-divider" />
                         <button 
@@ -306,14 +340,14 @@ export default function Navbar({ showToast }) {
                 <LayoutDashboard size={18} />
                 <span>Dashboard</span>
               </Link>
-              <Link to="/admin" className={`mobile-menu-item ${isActive('/admin') ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
-                <ShieldCheck size={18} />
-                <span>Admin</span>
-              </Link>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+      <NotificationsPanel 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
     </>
   );
 }

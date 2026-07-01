@@ -71,10 +71,6 @@ export default function Landing({ showToast }) {
                         <LayoutDashboard size={15} />
                         Dashboard
                       </Link>
-                      <Link to="/admin" className="navbar-dropdown-item" onClick={() => setShowProfile(false)}>
-                        <ShieldCheck size={15} />
-                        Admin
-                      </Link>
                       <div className="navbar-dropdown-divider" />
                       <button 
                         className="navbar-dropdown-item navbar-dropdown-danger" 

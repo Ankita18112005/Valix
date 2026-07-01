@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
-  ThumbsUp, DollarSign, HelpCircle, User, Calendar,
+  ThumbsUp, DollarSign, HelpCircle, User, Calendar, Users, UserPlus, CheckCircle2, XCircle, LayoutDashboard
 } from 'lucide-react';
 import { doc, getDoc, setDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -9,15 +9,17 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import './IdeaDetail.css';
 import CommunityFeedback from '../components/CommunityFeedback';
+import ApplyModal from '../components/ApplyModal';
 
 export default function IdeaDetail({ showToast }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
   
   const [idea, setIdea] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showApplyModal, setShowApplyModal] = useState(false);
 
   useEffect(() => {
     const fetchIdea = async () => {
@@ -106,6 +108,14 @@ export default function IdeaDetail({ showToast }) {
               {idea.createdAt ? new Date(idea.createdAt?.toDate ? idea.createdAt.toDate() : idea.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently'}
             </span>
           </div>
+
+          {currentUser?.uid === idea.userId && (
+            <div style={{ marginTop: '16px' }}>
+              <Link to={`/workspace/${id}`} className="detail-apply-btn" style={{display: 'inline-flex', textDecoration: 'none'}}>
+                <LayoutDashboard size={16} /> Open Project Workspace
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -130,8 +140,42 @@ export default function IdeaDetail({ showToast }) {
           </div>
         </div>
 
+        {/* Team Status Card */}
+        {idea.teamEnabled && idea.team && (
+          <div className="detail-team-section animate-fade-in-up delay-2">
+            <div className="detail-team-header">
+              <div className="detail-team-title">
+                <Users size={20} className="text-primary" />
+                <h3>Team Building</h3>
+              </div>
+              {currentUser?.uid !== idea.userId && (
+                <button 
+                  className="detail-apply-btn"
+                  onClick={() => setShowApplyModal(true)}
+                >
+                  <UserPlus size={16} /> Apply to Join
+                </button>
+              )}
+            </div>
+            
+            <p className="detail-team-desc">
+              The founder is looking to build a team of up to <strong>{idea.team.maxMembers}</strong> members.
+            </p>
+
+            <div className="detail-team-roles">
+              {idea.team.roles?.map((role, idx) => (
+                <div key={idx} className={`detail-team-role ${role.filled ? 'filled' : 'open'}`}>
+                  {role.filled ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                  <span className="role-name">{role.title}</span>
+                  <span className="role-status">{role.filled ? 'Filled' : 'Open'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Vote Section */}
-        <div className="detail-vote-section animate-fade-in-up delay-2">
+        <div className="detail-vote-section animate-fade-in-up delay-3">
           <h3 className="detail-vote-title">Cast your vote</h3>
           <div className="detail-vote-buttons">
             <button 
@@ -148,6 +192,14 @@ export default function IdeaDetail({ showToast }) {
         {/* Comments */}
         <CommunityFeedback ideaId={id} />
       </div>
+
+      <ApplyModal 
+        isOpen={showApplyModal}
+        onClose={() => setShowApplyModal(false)}
+        idea={idea}
+        currentUser={currentUser}
+        userData={userData}
+      />
     </div>
   );
 }

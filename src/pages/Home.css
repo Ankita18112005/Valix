@@ -249,3 +249,35 @@
   .home-sidebar { display: none; }
   .mobile-categories { display: flex; }
 }
+
+/* -- Filter Tabs -- */
+.home-filter-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.home-filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-filter-tab:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.home-filter-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}

@@ -13,10 +13,10 @@ import './Profile.css';
 export default function Profile() {
   const { currentUser, updateUserProfileData } = useAuth();
   const navigate = useNavigate();
-  
+
   const [userIdeas, setUserIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Edit Profile States
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState('Entrepreneur & Builder');
@@ -26,8 +26,8 @@ export default function Profile() {
 
   useEffect(() => {
     if (!currentUser) {
-       navigate('/login');
-       return;
+      navigate('/login');
+      return;
     }
 
     setEditName(currentUser.displayName || '');
@@ -83,10 +83,10 @@ export default function Profile() {
 
   const handleSaveProfile = async () => {
     if (!editName.trim()) {
-       toast.error("Name cannot be empty");
-       return;
+      toast.error("Name cannot be empty");
+      return;
     }
-    
+
     setIsSaving(true);
     try {
       await updateUserProfileData(editName, editBio);
@@ -102,7 +102,7 @@ export default function Profile() {
 
   const totalScore = userIdeas.reduce((acc, curr) => acc + (curr.score ?? curr.validationScore ?? 0), 0);
   const avgScore = userIdeas.length > 0 ? Math.round(totalScore / userIdeas.length) : 0;
-  const reputation = userIdeas.length * 10 + totalScore; 
+  const reputation = userIdeas.length * 10 + totalScore;
 
   return (
     <div className="profile-page" id="profile-page">
@@ -114,26 +114,26 @@ export default function Profile() {
           <div className="profile-avatar-lg">
             <User size={32} />
           </div>
-          
+
           {isEditing ? (
             <div className="profile-edit-form">
-              <input 
-                type="text" 
-                value={editName} 
-                onChange={e => setEditName(e.target.value)} 
+              <input
+                type="text"
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
                 className="profile-edit-input"
                 placeholder="Your Name"
               />
-              <textarea 
-                value={editBio} 
-                onChange={e => setEditBio(e.target.value)} 
+              <textarea
+                value={editBio}
+                onChange={e => setEditBio(e.target.value)}
                 className="profile-edit-textarea"
                 placeholder="Tell us about yourself..."
                 rows={3}
               />
               <div className="profile-edit-actions">
-                <button 
-                  className="profile-edit-btn profile-btn-cancel" 
+                <button
+                  className="profile-edit-btn profile-btn-cancel"
                   onClick={() => {
                     setIsEditing(false);
                     setEditName(currentUser.displayName || '');
@@ -143,8 +143,8 @@ export default function Profile() {
                 >
                   <X size={16} /> Cancel
                 </button>
-                <button 
-                  className="profile-edit-btn profile-btn-save" 
+                <button
+                  className="profile-edit-btn profile-btn-save"
                   onClick={handleSaveProfile}
                   disabled={isSaving}
                 >
@@ -192,32 +192,32 @@ export default function Profile() {
         <div className="profile-ideas animate-fade-in-up delay-2">
           <h2 className="profile-ideas-title">My Ideas</h2>
           {loading ? (
-             <p style={{textAlign: 'center', margin: '2rem'}}>Loading...</p>
+            <p style={{ textAlign: 'center', margin: '2rem' }}>Loading...</p>
           ) : userIdeas.length > 0 ? (
             <div className="profile-ideas-list">
               {userIdeas.map((idea) => {
                 const score = idea.score ?? idea.validationScore ?? 0;
                 return (
-                <Link to={`/idea/${idea.id}`} key={idea.id} className="profile-idea-card">
-                  <div className="profile-idea-info">
-                    <h3 className="profile-idea-title">{idea.title}</h3>
-                    <p className="profile-idea-desc">{idea.problem}</p>
-                    <div className="profile-idea-tags">
-                      {idea.tags?.slice(0, 3).map((t) => (
-                        <span key={t} className="idea-tag">{t}</span>
-                      ))}
+                  <Link to={`/idea/${idea.id}`} key={idea.id} className="profile-idea-card">
+                    <div className="profile-idea-info">
+                      <h3 className="profile-idea-title">{idea.title}</h3>
+                      <p className="profile-idea-desc">{idea.problem}</p>
+                      <div className="profile-idea-tags">
+                        {idea.tags?.slice(0, 3).map((t) => (
+                          <span key={t} className="idea-tag">{t}</span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="profile-idea-score-wrap">
-                    <span className={`profile-idea-score ${
-                      score >= 75 ? 'score-strong' : score >= 50 ? 'score-moderate' : 'score-weak'
-                    }`}>
-                      {score}
-                    </span>
-                    <ArrowRight size={16} className="profile-idea-arrow" />
-                  </div>
-                </Link>
-              )})}
+                    <div className="profile-idea-score-wrap">
+                      <span className={`profile-idea-score ${score >= 75 ? 'score-strong' : score >= 50 ? 'score-moderate' : 'score-weak'
+                        }`}>
+                        {score}
+                      </span>
+                      <ArrowRight size={16} className="profile-idea-arrow" />
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           ) : (
             <div className="profile-empty">
